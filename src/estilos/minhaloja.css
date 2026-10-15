@@ -1,0 +1,295 @@
+/* Telas de Minha loja (T26 a T32). Só tokens de :root. */
+
+/* ---------- Comum ---------- */
+.minha-loja > * + * { margin-top: var(--e-4); }
+.minha-loja__blocos { display: flex; flex-direction: column; gap: var(--e-4); }
+.minha-loja__esqueleto-titulo { width: 40%; margin-bottom: var(--e-4); }
+.minha-loja .bloco__cabecalho h2 { display: inline-flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; }
+.minha-loja .bloco__cabecalho { align-items: center; flex-wrap: wrap; }
+
+.minha-loja__barra {
+  position: sticky; bottom: 0; z-index: 20; margin-top: var(--e-6);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap;
+  padding: var(--e-3) var(--e-4); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+  box-shadow: var(--sombra-1);
+}
+.minha-loja__barra--sujo { border-color: var(--linha-campo); box-shadow: var(--sombra-2); }
+.minha-loja__barra-texto { color: var(--texto-2); font-weight: 500; }
+.minha-loja__barra-texto .texto-erro { display: inline-flex; align-items: center; gap: 6px; }
+.minha-loja__barra-acoes { display: flex; gap: var(--e-2); }
+
+.minha-loja__linha-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--e-3); }
+.minha-loja__campo-curto { max-width: 320px; }
+.minha-loja__sufixo { padding: 0 12px 0 4px; white-space: nowrap; }
+
+.minha-loja__grupo-marcar { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-1); }
+.minha-loja__grupo-marcar legend { padding: 0; margin-bottom: var(--e-2); }
+.minha-loja__grupo-marcar--linha { flex-direction: row; flex-wrap: wrap; gap: var(--e-1) var(--e-4); }
+.minha-loja__grupo-marcar--linha legend { width: 100%; }
+.minha-loja__grupo-marcar:disabled { opacity: 0.55; }
+.minha-loja__marcar { display: inline-flex; align-items: center; gap: var(--e-2); min-height: 36px; cursor: pointer; }
+.minha-loja__marcar input[type='radio'] { width: 18px; height: 18px; accent-color: var(--marca); }
+
+.minha-loja__lista-status { list-style: none; padding: 0; margin: 0; }
+.minha-loja__lista-status > li {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap;
+  padding: var(--e-3) 0; border-bottom: 1px solid var(--linha);
+}
+.minha-loja__lista-status > li:last-child { border-bottom: 0; }
+.minha-loja__lista-nome { display: flex; flex-direction: column; min-width: 0; }
+.minha-loja__lista-status-direita { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; }
+.minha-loja__lista-status--cartoes > li {
+  flex-direction: column; align-items: flex-start; background: var(--superficie); border: 1px solid var(--linha);
+  border-radius: var(--raio); padding: var(--e-4); margin-bottom: var(--e-3);
+}
+.minha-loja__lista-status--cartoes > li:last-child { border-bottom: 1px solid var(--linha); }
+
+/* ---------- T26. Funcionamento ---------- */
+.funcionamento__balcao { display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap; margin-bottom: var(--e-4); }
+.funcionamento__regua { color: var(--texto-3); font-size: var(--t-12); display: flex; justify-content: space-between; margin-left: calc(210px + 160px + 2 * var(--e-4)); margin-right: calc(330px + var(--e-4)); }
+.funcionamento__dias { list-style: none; padding: 0; margin: 0; }
+.funcionamento__dia {
+  display: grid; grid-template-columns: 210px 160px minmax(80px, 1fr) 330px; align-items: center; gap: var(--e-1) var(--e-4);
+  padding: var(--e-2) 0; border-bottom: 1px solid var(--linha);
+}
+.funcionamento__dia:last-child { border-bottom: 0; }
+.funcionamento__chave label { font-weight: 500; }
+.funcionamento__faixas { font-variant-numeric: tabular-nums; color: var(--texto-2); }
+.funcionamento__linha { position: relative; height: 10px; background: var(--superficie-3); border-radius: 5px; }
+.funcionamento__trecho { position: absolute; top: 0; bottom: 0; background: var(--marca-clara-forte); border: 1px solid var(--marca); border-radius: 5px; }
+.funcionamento__acoes { display: flex; justify-content: flex-end; gap: var(--e-1); }
+.funcionamento__aviso { grid-column: 1 / -1; }
+.funcionamento__faixa { border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-3); margin: 0; display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--e-3); align-items: end; }
+.funcionamento__faixa legend { font-weight: 600; padding: 0 4px; }
+.funcionamento__previa { padding: var(--e-3); background: var(--superficie-2); border-radius: var(--raio-p); font-weight: 500; }
+.funcionamento__excecoes { list-style: none; padding: 0; margin: 0; }
+.funcionamento__excecoes li { display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); padding: var(--e-2) 0; border-bottom: 1px solid var(--linha); font-variant-numeric: tabular-nums; }
+.funcionamento__excecoes li:last-child { border-bottom: 0; }
+.funcionamento__sub { margin: calc(-1 * var(--e-3)) 0 var(--e-3); }
+.funcionamento__feriados { list-style: none; padding: 0; margin: 0; }
+.funcionamento__feriado { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(260px, 2fr); gap: var(--e-4); align-items: start; padding: var(--e-3) 0; border-bottom: 1px solid var(--linha); }
+.funcionamento__feriado:last-child { border-bottom: 0; }
+.funcionamento__feriado-nome { display: flex; flex-direction: column; }
+.funcionamento__feriado-campos { display: flex; flex-direction: column; gap: var(--e-3); }
+.funcionamento__feriado-campos .campo__rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.funcionamento__feriado-campos .minha-loja__linha-campos .campo__rotulo { position: static; width: auto; height: auto; clip: auto; }
+
+/* ---------- T27. Entrega ---------- */
+.entrega__sub { margin: calc(-1 * var(--e-3)) 0 var(--e-3); }
+.entrega__raio { margin-bottom: var(--e-3); }
+.dados__mapa figcaption { color: var(--texto-3); font-size: var(--t-12); text-align: center; }
+.entrega__area { display: grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 2fr); gap: var(--e-4); align-items: start; }
+/* Contexto de empilhamento próprio: os z-index do Leaflet não passam da barra de salvar nem das sobreposições */
+.entrega__mapa-caixa { position: relative; z-index: 0; isolation: isolate; }
+.entrega__mapa { height: 380px; border: 1px solid var(--linha); border-radius: var(--raio); background: var(--superficie-2); }
+.entrega__mapa-vazio {
+  position: absolute; left: 50%; bottom: var(--e-6); transform: translateX(-50%); z-index: 500;
+  padding: var(--e-2) var(--e-3); background: var(--superficie); border: 1px solid var(--linha-forte); border-radius: var(--raio-p);
+  font-weight: 500; color: var(--texto-2); white-space: nowrap; pointer-events: none;
+}
+.entrega__marcador {
+  display: grid; place-items: center; border-radius: 50%; background: var(--texto); color: #fff;
+  border: 3px solid #fff; box-shadow: 0 1px 4px rgba(14, 30, 56, 0.45); font: 700 11px/1 var(--fonte-titulo);
+}
+.entrega__frete-mapa { stroke: var(--texto); }
+.entrega__resumo { display: flex; flex-direction: column; gap: var(--e-3); align-items: flex-start; }
+.entrega__resumo-texto { font-weight: 600; }
+.entrega__legenda { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-2); font-variant-numeric: tabular-nums; }
+.entrega__legenda li { display: flex; align-items: center; gap: var(--e-2); }
+.entrega__amostra { display: inline-block; flex-shrink: 0; width: 14px; height: 14px; border-radius: 4px; background: var(--superficie-3); border: 1px solid rgba(14, 30, 56, 0.2); vertical-align: middle; }
+.entrega__amostra--frete { background: transparent; border: 2px dashed var(--texto); border-radius: 50%; }
+.entrega__celula-cor { width: 28px; vertical-align: middle !important; }
+.entrega__patamar-titulo .entrega__amostra { margin-right: var(--e-2); }
+.entrega__tabela td { padding-top: 6px; padding-bottom: 6px; vertical-align: top; }
+.entrega__tabela .campo { gap: 0; }
+.entrega__tabela .campo__entrada { min-height: 36px; }
+.entrega__tabela .campo__erro { font-size: var(--t-12); margin-top: 4px; }
+.entrega__patamares-celular { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-3); }
+.entrega__patamar-cartao { display: flex; flex-direction: column; gap: var(--e-3); border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-4); }
+.entrega__patamar-titulo { font-weight: 600; }
+
+/* ---------- T28. Modalidades ---------- */
+.modalidades__campos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e-4); }
+.modalidades__texto { grid-column: 1 / -1; }
+
+/* ---------- T29. Pagamentos ---------- */
+.pagamentos__sub { margin: calc(-1 * var(--e-3)) 0 var(--e-3); }
+.pagamentos__formas { list-style: none; padding: 0; margin: 0; }
+.pagamentos__forma { display: flex; flex-direction: column; gap: var(--e-2); padding: var(--e-3) 0; border-bottom: 1px solid var(--linha); }
+.pagamentos__forma:last-child { border-bottom: 0; }
+.pagamentos__forma .interruptor label { font-weight: 500; }
+.pagamentos__bandeiras { padding-left: 52px; }
+
+/* ---------- T30. Dados da loja ---------- */
+.dados__identidade { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--e-6); align-items: start; }
+.dados__imagens { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+.dados__grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-4); }
+.dados__endereco { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: var(--e-6); align-items: start; }
+.dados__aviso-endereco { margin-top: var(--e-4); padding: var(--e-3) var(--e-4); border: 1px solid var(--linha-forte); border-radius: var(--raio); background: var(--superficie-2); display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap; }
+.dados__previa { display: flex; flex-direction: column; gap: var(--e-2); }
+.dados__previa figcaption { color: var(--texto-3); font-size: var(--t-12); }
+.dados__aparelho { border: 1px solid var(--linha-forte); border-radius: 16px; padding: 8px; background: var(--superficie); position: relative; }
+/* Sem cor de cliente: capa e logo em quadros neutros (stone) */
+.dados__capa { height: 88px; border-radius: 10px; background: var(--superficie-3, #E7E5E4); }
+.dados__logo {
+  width: 52px; height: 52px; border-radius: 12px; margin: -26px 0 0 12px; position: relative;
+  display: grid; place-items: center; background: var(--superficie-2, #FAFAF9); color: var(--texto-2, #44403C);
+  border: 1px solid var(--linha-forte, #D6D3D1); box-shadow: 0 0 0 3px var(--superficie, #FFFFFF);
+  font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-weight: 600; letter-spacing: 0.02em;
+}
+.dados__previa-nome { font-family: var(--fonte-titulo); font-weight: 600; margin: var(--e-2) 12px; }
+.dados__previa-linha { display: block; height: 8px; margin: 0 12px 8px; border-radius: 4px; background: var(--superficie-3); }
+.dados__previa-linha--curta { width: 50%; }
+.dados__mapa { display: flex; flex-direction: column; gap: var(--e-2); }
+.dados__mapa svg { width: 100%; height: auto; }
+.dados__rua { stroke: var(--linha-forte); stroke-width: 6; fill: none; }
+
+/* ---------- T31. Integrações ---------- */
+.integracoes__nome { text-align: left; font-weight: 400; }
+.integracoes__resumo {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0;
+  background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+}
+.integracoes__resumo > div { padding: var(--e-4) 18px; display: flex; flex-direction: column; gap: var(--e-2); min-width: 0; }
+.integracoes__resumo > div + div { border-left: 1px solid var(--linha); }
+.integracoes__resumo dd { margin: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+/* Reservas enquanto .rotulo-kpi e .numero-kpi não chegam ao estilos.css */
+.integracoes__resumo .rotulo-kpi { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-3); }
+.integracoes__resumo .numero-kpi { font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-size: 27px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.minha-loja .numero { font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-variant-numeric: tabular-nums; }
+.integracoes__ruim { color: var(--vermelho-texto); }
+.integracoes__explica { color: var(--texto-2); margin: calc(-1 * var(--e-2)) 0 var(--e-3); }
+.integracoes__nada { color: var(--texto-2); margin: 0; }
+.integracoes__falhas { list-style: none; padding: 0; margin: 0; }
+.integracoes__falha { display: flex; flex-direction: column; align-items: flex-start; gap: var(--e-2); padding: var(--e-3) 0; border-bottom: 1px solid var(--linha); }
+.integracoes__falha:last-child { border-bottom: 0; padding-bottom: 0; }
+.integracoes__falha p { margin: 0; }
+.integracoes__falha-topo { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; }
+.integracoes__motivo { font-weight: 600; }
+.integracoes__motivo-pedido { display: flex; flex-direction: column; gap: 4px; max-width: 46ch; }
+.integracoes__tecnico summary { cursor: pointer; color: var(--texto-3); font-size: var(--t-12); width: fit-content; }
+.integracoes__tecnico code { display: block; margin-top: 4px; padding: 6px 8px; background: var(--superficie-2); border: 1px solid var(--linha); border-radius: var(--raio-p); font-size: var(--t-12); color: var(--texto-2); overflow-wrap: anywhere; }
+.integracoes__tabela-pedidos td { vertical-align: top; }
+.integracoes__acoes { display: flex; gap: var(--e-2); flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 767px) {
+  .integracoes__resumo { grid-template-columns: 1fr; }
+  .integracoes__resumo > div + div { border-left: 0; border-top: 1px solid var(--linha); }
+  .integracoes__acoes { flex-direction: column; width: 100%; }
+  .integracoes__tecnico summary { min-height: 44px; display: flex; align-items: center; }
+}
+
+/* ---------- T32. Rastreamento ---------- */
+.rastreamento__corpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--e-6); align-items: start; }
+.rastreamento__acoes { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+.rastreamento__onde { display: flex; flex-direction: column; gap: var(--e-3); margin: 0; }
+.rastreamento__onde > div { display: flex; flex-direction: column; gap: 4px; }
+.rastreamento__onde dt { color: var(--texto-2); font-weight: 500; }
+.rastreamento__onde dd { margin: 0; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 767px) {
+  .minha-loja__barra { bottom: calc(64px + env(safe-area-inset-bottom)); border-radius: var(--raio) var(--raio) 0 0; }
+  .minha-loja__barra-acoes { width: 100%; }
+  .minha-loja__barra-acoes .botao { flex: 1; min-height: 44px; }
+  .minha-loja__marcar { min-height: 44px; }
+  .minha-loja .botao { min-height: 44px; }
+  .minha-loja__campo-curto { max-width: none; }
+
+  .funcionamento__dia { grid-template-columns: 1fr; padding: var(--e-3) 0; }
+  .funcionamento__acoes { justify-content: flex-start; flex-wrap: wrap; }
+  .funcionamento__faixa { grid-template-columns: 1fr 1fr; }
+  .funcionamento__faixa .botao { grid-column: 1 / -1; justify-self: start; }
+  .funcionamento__feriado { grid-template-columns: 1fr; gap: var(--e-2); }
+
+  .entrega__area { grid-template-columns: 1fr; }
+  .entrega__mapa { height: 260px; }
+  .modalidades__campos { grid-template-columns: 1fr; }
+  .pagamentos__bandeiras { padding-left: 0; }
+  .dados__identidade, .dados__endereco, .dados__grade { grid-template-columns: 1fr; }
+  .rastreamento__corpo { grid-template-columns: 1fr; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .modalidades__campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .funcionamento__dia { grid-template-columns: 200px 1fr auto; }
+  .funcionamento__linha, .funcionamento__regua { display: none; }
+}
+
+/* Pergunta do horário do balcão (substitui a chave "segue o mesmo horário") */
+.funcionamento__balcao { border: 0; padding: 0; margin: 0 0 var(--e-4); display: flex; flex-direction: column; gap: var(--e-3); }
+.funcionamento__pergunta { font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-16); padding: 0; margin-bottom: var(--e-2); }
+.funcionamento__opcoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-2); }
+.funcionamento__opcao { display: flex; gap: var(--e-3); align-items: flex-start; padding: var(--e-3) var(--e-4); border: 1px solid var(--linha-forte); border-radius: var(--raio); cursor: pointer; background: var(--superficie); }
+.funcionamento__opcao input { accent-color: var(--marca); margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; }
+.funcionamento__opcao > span { display: flex; flex-direction: column; gap: 2px; }
+.funcionamento__opcao > span > span { color: var(--texto-2); font-size: var(--t-14); }
+.funcionamento__opcao--marcada { border-color: var(--marca); background: var(--marca-clara); }
+.funcionamento__opcao:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+@media (max-width: 767px) { .funcionamento__opcoes { grid-template-columns: 1fr; } }
+
+/* Entrega: quem faz as entregas (parceiros só aparecem se a loja optar) */
+.entrega__quem { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-3); }
+.entrega__pergunta { font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-20); padding: 0; margin-bottom: var(--e-2); }
+.entrega__opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-2); }
+.entrega__opcao { display: flex; gap: var(--e-3); align-items: flex-start; padding: var(--e-3) var(--e-4); border: 1px solid var(--linha-forte); border-radius: var(--raio); cursor: pointer; background: var(--superficie); }
+.entrega__opcao input { accent-color: var(--marca); margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; }
+.entrega__opcao > span { display: flex; flex-direction: column; gap: 2px; }
+.entrega__opcao > span > span { color: var(--texto-2); font-size: var(--t-14); }
+.entrega__opcao--marcada { border-color: var(--marca); background: var(--marca-clara); }
+.entrega__opcao:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+.entrega__parceiros { margin-top: var(--e-4); padding-top: var(--e-4); border-top: 1px solid var(--linha); }
+.entrega__subtitulo { font-size: var(--t-16); margin-bottom: var(--e-2); }
+@media (max-width: 767px) { .entrega__opcoes { grid-template-columns: 1fr; } }
+
+/* Bandeiras como etiquetas marcáveis */
+.pagamentos__bandeiras { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.pagamentos__bandeiras .minha-loja__marcar {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border: 1px solid var(--linha-forte);
+  border-radius: 999px; background: var(--superficie); font-size: var(--t-14); font-weight: 500; cursor: pointer; min-height: 34px;
+}
+.pagamentos__bandeiras .minha-loja__marcar:has(input:checked) { border-color: var(--marca); background: var(--marca-clara); }
+.pagamentos__bandeiras .minha-loja__marcar:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+.pagamentos__bandeiras:disabled .minha-loja__marcar { opacity: 0.55; cursor: not-allowed; }
+.pagamentos__nota { font-size: var(--t-14); margin-top: 4px; }
+@media (max-width: 767px) { .pagamentos__bandeiras .minha-loja__marcar { min-height: 44px; } }
+.funcionamento__balcao { align-items: stretch; justify-content: flex-start; }
+.funcionamento__opcoes { width: 100%; }
+
+/* Modalidades: tempo estimado (mínimo e máximo) e preparo antes de chamar o entregador */
+.modalidades__largo { grid-column: span 2; }
+.modalidades__tempo { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-2); min-width: 0; }
+.modalidades__tempo legend { padding: 0; margin-bottom: var(--e-2); }
+.modalidades__tempo-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-3); }
+.modalidades__preparo { padding-left: var(--e-4); border-left: 2px solid var(--linha-forte); }
+@media (max-width: 1100px) { .modalidades__largo { grid-column: 1 / -1; } }
+@media (max-width: 767px) { .modalidades__preparo { padding-left: var(--e-3); } }
+
+/* Pagamentos: logo de cada bandeira na etiqueta */
+.pagamentos__logo { flex-shrink: 0; display: inline-grid; place-items: center; width: 36px; height: 23px; border-radius: 4px; }
+.pagamentos__logo--carteira { background: #fff; border: 1px solid var(--linha-forte); }
+.pagamentos__logo--texto {
+  width: auto; min-width: 36px; padding: 0 6px; color: #fff; font: 700 11px/1 var(--fonte-titulo); letter-spacing: 0.01em; white-space: nowrap;
+}
+
+/* Integrações (15/10): sistemas da loja e disponibilidade por dia */
+.integracoes__sistemas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3); }
+.integracoes__sistema { display: flex; flex-direction: column; gap: 4px; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: 16px 18px; }
+.integracoes__sistema-nome { font-size: var(--t-20); font-weight: 600; }
+.integracoes__leitura { grid-column: 1 / -1; color: var(--texto-3); font-size: var(--t-12); }
+.integracoes__media { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.integracoes__dias { display: flex; flex-direction: column; }
+.integracoes__dia { display: grid; grid-template-columns: 110px minmax(120px, 1fr) 64px minmax(220px, 1.4fr); gap: var(--e-3); align-items: center; padding: 8px 0; border-top: 1px solid var(--linha); }
+.integracoes__dia:first-child { border-top: 0; }
+.integracoes__dia-nome { font-weight: 500; }
+.integracoes__barra { height: 10px; border-radius: 5px; background: var(--vermelho-ponto); overflow: hidden; display: block; }
+.integracoes__barra-online { display: block; height: 100%; background: var(--marca); border-right: 2px solid var(--superficie); }
+.integracoes__pct { text-align: right; font-weight: 500; }
+.integracoes__dia-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: var(--t-12); }
+@media (max-width: 767px) {
+  .integracoes__sistemas { grid-template-columns: 1fr; }
+  .integracoes__dia { grid-template-columns: 1fr auto; }
+  .integracoes__barra { grid-column: 1 / -1; grid-row: 2; }
+  .integracoes__dia-estado { grid-column: 1 / -1; }
+}
+.integracoes__disp .bloco__cabecalho { align-items: flex-start; }
+.integracoes__disp .bloco__cabecalho > div:first-child { flex: 1; min-width: 0; max-width: 72ch; }
+.integracoes__media { flex-shrink: 0; }

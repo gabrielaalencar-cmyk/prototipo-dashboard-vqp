@@ -1,0 +1,204 @@
+/* Grupo cardapio2: T09 Edição de produto, T11 Organizar cardápio, T12 Copiar para lojas, T33 Conta e Ajuda */
+
+/* Identidade de 15/10: números em Plex Mono, rótulo e número de KPI (reservas até os tokens chegarem) */
+.edicao-produto .numero, .copiar .numero, .organizar .numero { font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-variant-numeric: tabular-nums; }
+.copiar .rotulo-kpi { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--texto-3); }
+.copiar .numero-kpi { font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-size: 27px; font-weight: 500; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+
+/* ---------- T09 Edição de produto ---------- */
+.edicao-produto > .faixa { margin-bottom: var(--e-3); }
+.edicao-produto .botao--voltar { margin-bottom: var(--e-2); }
+.edicao-produto > .faixa + .faixa, .edicao-produto .pagina__cabecalho + .faixa { margin-bottom: var(--e-3); }
+.edicao-produto__pendente { margin-top: var(--e-2); }
+.edicao-produto__grade { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--e-4); align-items: start; }
+.edicao-produto__principal { padding-top: var(--e-2); }
+.edicao-produto__painel { padding-top: var(--e-4); }
+.edicao-produto__titulo-secao { font-size: var(--t-20); margin-bottom: var(--e-3); }
+.edicao-produto__duas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-4); }
+.edicao-produto__duas--estreitas { max-width: 320px; }
+.edicao-produto__codigo { max-width: 240px; }
+.edicao-produto__copiar { display: flex; align-items: center; gap: var(--e-3); flex-wrap: wrap; margin-bottom: var(--e-4); }
+.edicao-produto__copiar .texto-secundario { font-size: var(--t-14); }
+
+.edicao-produto__precos { gap: var(--e-3); }
+.edicao-produto__modo-preco { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-2); }
+.edicao-produto__opcao-preco { display: flex; align-items: flex-start; gap: var(--e-3); border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-3); cursor: pointer; }
+.edicao-produto__opcao-preco input { margin-top: 3px; accent-color: var(--marca); width: 18px; height: 18px; flex: none; }
+.edicao-produto__opcao-preco--ativa { border-color: var(--marca); background: var(--marca-clara); }
+.edicao-produto__opcao-preco:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+.edicao-produto__detalhe { display: block; font-size: var(--t-14); }
+.edicao-produto__por-modalidade { display: flex; flex-direction: column; gap: var(--e-3); }
+.edicao-produto__modalidade { border: 0; border-top: 1px solid var(--linha); padding: var(--e-3) 0 0; margin: 0; min-width: 0; }
+.edicao-produto__modalidade legend { font-family: var(--fonte-titulo); font-weight: 600; padding: 0 var(--e-2) 0 0; }
+.edicao-produto__fora { font-family: var(--fonte-texto); font-weight: 400; font-size: var(--t-14); }
+.edicao-produto__foto { display: flex; align-items: center; gap: var(--e-3); }
+.edicao-produto__miniatura { width: 72px; height: 72px; border-radius: var(--raio-p); object-fit: cover; flex: none; }
+.edicao-produto__miniatura--vazia { background: var(--superficie-3); color: var(--texto-3); display: grid; place-items: center; }
+.edicao-produto__foto-acoes { display: flex; flex-direction: column; gap: var(--e-1); min-width: 0; }
+.edicao-produto__foto-botoes { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+.edicao-produto__arquivo { cursor: pointer; }
+.edicao-produto__arquivo:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+.edicao-produto__grupo, .edicao-produto__faixa, .edicao-produto__conjunto { border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-3) var(--e-4) var(--e-4); margin: 0; min-width: 0; }
+.edicao-produto__grupo { display: flex; flex-direction: column; gap: var(--e-3); align-items: flex-start; }
+.edicao-produto__grupo > * { width: 100%; }
+.edicao-produto__grupo > .botao { width: auto; }
+.edicao-produto__grupo legend, .edicao-produto__faixa legend { font-family: var(--fonte-titulo); font-weight: 600; padding: 0 var(--e-1); }
+.edicao-produto__regras { display: flex; align-items: center; gap: var(--e-3); flex-wrap: wrap; }
+.edicao-produto__itens { border-top: 1px solid var(--linha); }
+.edicao-produto__item { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto auto 64px; align-items: center; gap: var(--e-3); padding: 6px 0; border-bottom: 1px solid var(--linha); }
+.edicao-produto__item-resumo { font-size: var(--t-14); }
+.edicao-produto__item-modalidades { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 160px)); gap: var(--e-3); padding: var(--e-2) var(--e-3) var(--e-3); background: var(--superficie-2); border-radius: var(--raio); }
+.edicao-produto__item-rotulo { font-size: var(--t-14); font-weight: 500; color: var(--texto-2); }
+.edicao-produto__item-nome { font-weight: 500; min-width: 0; }
+.edicao-produto__item-preco { display: flex; flex-direction: column; gap: 2px; }
+.edicao-produto__item-preco .campo__entrada { min-height: 36px; padding: 6px 8px; }
+.edicao-produto__item-estado { color: var(--texto-2); font-size: var(--t-14); }
+.edicao-produto__adicionar-grupo { display: flex; align-items: flex-end; gap: var(--e-3); flex-wrap: wrap; }
+.edicao-produto__adicionar-grupo .campo { flex: 1 1 240px; }
+.edicao-produto__navegar-grupos { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); }
+.edicao-produto__navegar-grupos > span { font-weight: 500; text-align: center; }
+
+.edicao-produto__conjunto { display: flex; flex-direction: column; gap: var(--e-2); }
+.edicao-produto__marcar { display: flex; align-items: center; gap: var(--e-2); min-height: 32px; }
+.edicao-produto__faixa { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--e-3); align-items: end; }
+.edicao-produto__faixa-erro { grid-column: 1 / -1; }
+
+.edicao-produto__previa { position: sticky; top: calc(var(--cabecalho-altura) + 16px); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-4); }
+.edicao-produto__ver-como { display: flex; flex-direction: column; gap: var(--e-1); margin-bottom: var(--e-3); }
+.edicao-produto__ver-como-rotulo { font-size: var(--t-14); font-weight: 500; color: var(--texto-2); }
+.edicao-produto__previa-nota { margin-top: var(--e-2); }
+.edicao-produto__app { border: 1px solid var(--linha); border-radius: var(--raio); overflow: hidden; background: var(--superficie-2); }
+.edicao-produto__app-foto { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.edicao-produto__app-foto--vazia { background: var(--superficie-3); color: var(--texto-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--e-1); font-size: var(--t-14); }
+.edicao-produto__app-corpo { padding: var(--e-3); display: flex; flex-direction: column; gap: var(--e-2); background: var(--superficie); }
+.edicao-produto__app-nome { font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-16); overflow-wrap: anywhere; }
+.edicao-produto__app-descricao { color: var(--texto-2); font-size: var(--t-14); overflow-wrap: anywhere; }
+.edicao-produto__app-preco { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--e-2); }
+.edicao-produto__app-herda { font-size: var(--t-12); color: var(--texto-3); }
+.edicao-produto__app-grupo { display: flex; flex-direction: column; font-size: var(--t-14); border-top: 1px solid var(--linha); padding-top: var(--e-2); }
+.edicao-produto__app-nota { font-size: var(--t-14); color: var(--texto-2); border-top: 1px solid var(--linha); padding-top: var(--e-2); }
+
+.edicao-produto__secoes { display: flex; flex-direction: column; gap: var(--e-4); }
+.edicao-produto__acoes-celular { display: flex; gap: var(--e-2); }
+.edicao-produto__acoes-celular .botao { flex: 1; min-height: 44px; }
+
+/* ---------- T11 Organizar cardápio ---------- */
+.organizar .botao--voltar, .copiar .botao--voltar { margin-bottom: var(--e-2); }
+.organizar__dica { margin-bottom: var(--e-3); }
+.organizar > .faixa { margin-bottom: var(--e-3); }
+.organizar__lista { display: flex; flex-direction: column; gap: var(--e-2); }
+.organizar__categoria { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); }
+.organizar__linha { display: flex; align-items: center; gap: var(--e-2); padding: 4px var(--e-2) 4px var(--e-3); min-height: 48px; }
+.organizar__linha--categoria { background: var(--superficie-2); border-radius: var(--raio); }
+.organizar__alca { color: var(--texto-3); cursor: grab; flex: none; }
+.organizar__posicao { font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-variant-numeric: tabular-nums; color: var(--texto-3); font-size: var(--t-12); min-width: 20px; text-align: right; }
+.organizar__nome { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--e-2); background: none; border: 0; padding: 6px 0; text-align: left; font-family: var(--fonte-titulo); font-weight: 600; font-size: var(--t-16); color: var(--texto); }
+.organizar__contagem { font-family: var(--fonte-texto); font-weight: 400; font-size: var(--t-14); }
+.organizar__produtos { border-top: 1px solid var(--linha); }
+.organizar__produto { border-bottom: 1px solid var(--linha); padding-left: var(--e-6); min-height: 44px; }
+.organizar__produto:last-child { border-bottom: 0; }
+.organizar__nome-produto { flex: 1; min-width: 0; }
+.organizar__vazia { padding: var(--e-3) var(--e-6); border-top: 1px solid var(--linha); }
+.organizar__mover { display: flex; gap: 2px; flex: none; }
+.organizar__mover .botao:disabled { opacity: 0.35; }
+.organizar--arrastando { opacity: 0.5; }
+.organizar--alvo { box-shadow: inset 0 3px 0 var(--marca); }
+.organizar [draggable='true'] { cursor: grab; }
+.organizar__acoes-celular { display: flex; gap: var(--e-2); margin-top: var(--e-4); }
+.organizar__acoes-celular .botao { flex: 1; min-height: 44px; }
+
+/* ---------- T12 Copiar para outras lojas ---------- */
+.copiar__origem { display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap; background: var(--superficie); box-shadow: inset 0 0 0 100px var(--marca-clara); border: 1px solid var(--linha-forte); border-radius: var(--raio); padding: var(--e-2) var(--e-4); margin-bottom: var(--e-4); position: sticky; top: calc(var(--cabecalho-altura) + 8px); z-index: 2; }
+.copiar__etapas { display: flex; gap: var(--e-2); margin-bottom: var(--e-4); flex-wrap: wrap; }
+.copiar__etapa { display: flex; align-items: center; gap: var(--e-2); color: var(--texto-3); font-weight: 500; padding-right: var(--e-3); }
+.copiar__etapa-numero { width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--linha-forte); display: grid; place-items: center; font-size: var(--t-12); font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-variant-numeric: tabular-nums; }
+.copiar__etapa--feita { color: var(--texto-2); }
+.copiar__etapa--atual { color: var(--texto); font-weight: 600; }
+.copiar__etapa--atual .copiar__etapa-numero { background: var(--marca); border-color: var(--marca); color: var(--sobre-marca); }
+.copiar__bloco { display: flex; flex-direction: column; gap: var(--e-4); max-width: 820px; }
+.copiar__titulo { font-size: var(--t-20); }
+.copiar__opcoes { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--e-2); }
+.copiar__opcao { display: flex; align-items: flex-start; gap: var(--e-3); border: 1px solid var(--linha); border-radius: var(--raio); padding: var(--e-3); cursor: pointer; }
+.copiar__opcao input { margin-top: 3px; accent-color: var(--marca); width: 18px; height: 18px; }
+.copiar__opcao--ativa { border-color: var(--marca); background: var(--marca-clara); }
+.copiar__detalhe { display: block; font-size: var(--t-14); }
+.copiar__lista { max-height: 360px; overflow-y: auto; border: 1px solid var(--linha); border-radius: var(--raio); }
+.copiar__lista li + li { border-top: 1px solid var(--linha); }
+.copiar__marcar { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-2) var(--e-3); min-height: 44px; cursor: pointer; }
+.copiar__nota-loja { display: block; font-size: var(--t-12); color: var(--ambar-texto); font-weight: 500; }
+.copiar__barra-lojas { display: flex; gap: var(--e-3); align-items: center; flex-wrap: wrap; }
+.copiar__resumo { display: flex; flex-direction: column; border-top: 1px solid var(--linha); }
+.copiar__resumo-linha { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; gap: var(--e-3); padding: var(--e-3) 0; border-bottom: 1px solid var(--linha); align-items: start; }
+.copiar__resumo-linha dt { color: var(--texto-2); font-weight: 500; }
+.copiar__resumo-linha dd { margin: 0; font-weight: 500; }
+.copiar__resumo-nomes { display: block; color: var(--texto-2); font-weight: 400; font-size: var(--t-14); }
+.copiar__erro { margin-top: calc(var(--e-2) * -1); }
+.copiar__acoes { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+.copiar__progresso { display: flex; flex-direction: column; border-top: 1px solid var(--linha); }
+.copiar__loja-progresso { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px var(--e-3); padding: var(--e-2) 0; border-bottom: 1px solid var(--linha); align-items: center; }
+.copiar__loja-nome { font-weight: 500; }
+.copiar__detalhe-loja { grid-column: 1 / -1; color: var(--texto-2); font-size: var(--t-14); }
+.copiar__kpis { display: flex; flex-wrap: wrap; gap: var(--e-3); margin: 0; }
+.copiar__kpi { border: 1px solid var(--linha); border-radius: var(--raio); padding: 16px 18px; min-width: 160px; display: flex; flex-direction: column; gap: 4px; }
+.copiar__kpi dd { margin: 0; }
+.copiar__opcao--marcar input { margin-top: 3px; }
+.copiar__motivo { grid-column: 1 / -1; color: var(--vermelho-texto); font-size: var(--t-14); }
+
+/* ---------- T33 Conta e Ajuda ---------- */
+.conta__blocos { display: flex; flex-direction: column; gap: var(--e-4); max-width: 760px; }
+.conta__dados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-3) var(--e-6); }
+.conta__dados dt { color: var(--texto-3); font-size: var(--t-14); }
+.conta__dados dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+.conta__formulario { max-width: 420px; }
+.conta__mostrar { display: flex; align-items: center; gap: var(--e-2); min-height: 32px; }
+.conta__sair { margin-top: var(--e-3); }
+
+.ajuda__canais { display: flex; flex-direction: column; }
+.ajuda__canal { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 2px var(--e-4); padding: var(--e-3) 0; border-bottom: 1px solid var(--linha); }
+.ajuda__canal:first-child { padding-top: 0; }
+.ajuda__canal-nome { font-weight: 600; grid-row: span 2; }
+.ajuda__canal-contato { font-weight: 500; font-family: var(--fonte-numero, 'IBM Plex Mono', monospace); font-variant-numeric: tabular-nums; }
+.ajuda__busca { margin-bottom: var(--e-4); max-width: 420px; }
+.ajuda__area + .ajuda__area { margin-top: var(--e-4); }
+.ajuda__area-titulo { font-size: var(--t-16); margin-bottom: var(--e-1); }
+.ajuda__perguntas { border-top: 1px solid var(--linha); }
+.ajuda__pergunta { border-bottom: 1px solid var(--linha); }
+.ajuda__pergunta-titulo { font-size: var(--t-14); font-family: var(--fonte-texto); }
+.ajuda__pergunta-titulo button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--e-3); background: none; border: 0; padding: var(--e-3) 0; min-height: 44px; text-align: left; font-weight: 500; color: var(--texto); font-size: var(--t-14); }
+.ajuda__pergunta-titulo svg { flex: none; transition: transform 0.2s var(--curva); }
+.ajuda__seta--aberta { transform: rotate(180deg); }
+.ajuda__resposta { padding: 0 0 var(--e-3); color: var(--texto-2); max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { .ajuda__pergunta-titulo svg { transition: none; } }
+
+/* ---------- Celular ---------- */
+@media (max-width: 767px) {
+  .edicao-produto__duas, .edicao-produto__faixa { grid-template-columns: 1fr; }
+  .edicao-produto__duas--estreitas { grid-template-columns: 1fr 1fr; max-width: none; }
+  .edicao-produto__modo-preco { grid-template-columns: 1fr; }
+  .edicao-produto__item { grid-template-columns: minmax(0, 1fr) auto; }
+  .edicao-produto__item-preco, .edicao-produto__item-resumo { grid-column: 1; }
+  .edicao-produto__item > .botao { grid-column: 1; justify-self: start; }
+  .edicao-produto__item-modalidades { grid-template-columns: 1fr; }
+  .edicao-produto__item-modalidades .edicao-produto__item-preco { grid-column: auto; }
+  .copiar__kpi { flex: 1 1 140px; min-width: 0; }
+  .edicao-produto__item-estado { display: none; }
+  .edicao-produto__item .interruptor { grid-column: 2; grid-row: 1 / span 3; }
+  .edicao-produto__previa { position: static; }
+  .edicao-produto .campo__entrada, .edicao-produto .botao { min-height: 44px; }
+  .edicao-produto__remover { justify-self: start; }
+
+  .organizar__linha { padding-left: var(--e-2); }
+  .organizar__produto { padding-left: var(--e-4); }
+  .organizar__mover .botao { min-width: 44px; min-height: 44px; }
+
+  .copiar__origem { top: 8px; }
+  .copiar__resumo-linha { grid-template-columns: minmax(0, 1fr) auto; }
+  .copiar__resumo-linha dt { grid-column: 1 / -1; }
+  .copiar__acoes .botao, .copiar__barra-lojas .botao { flex: 1; min-height: 44px; }
+
+  .conta__dados { grid-template-columns: 1fr; }
+  .conta .botao { min-height: 44px; }
+  .ajuda__canal { grid-template-columns: 1fr; }
+  .ajuda__canal-nome { grid-row: auto; }
+}

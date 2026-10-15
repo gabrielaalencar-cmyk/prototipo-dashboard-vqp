@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+.impeccable/review
+
+Especificacao_Prototipo.md
+PRODUCT.md
+.impeccable/
