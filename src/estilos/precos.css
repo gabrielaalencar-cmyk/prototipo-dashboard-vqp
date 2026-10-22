@@ -1,8 +1,6 @@
-/* Promoções automáticas: mapa de movimento, regras e assistente.
-   Escala sequencial de um matiz só (teal da marca), de #F0F6F6 a #0F5257. */
+/* Promoções automáticas: movimento por dia e período, regras e assistente. */
 
 .precos, .precos-novo {
-  --precos-d0: #F0F6F6; --precos-d1: #C3DCDD; --precos-d2: #86B5B8; --precos-d3: #3F7F84; --precos-d4: #0F5257;
   --precos-numero: var(--fonte-numero, 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace);
 }
 .precos .numero, .precos-novo .numero { font-family: var(--precos-numero); font-variant-numeric: tabular-nums; }
@@ -11,7 +9,7 @@
 }
 .precos > * + * { margin-top: var(--e-4); }
 
-/* ---------- Mapa ---------- */
+/* ---------- Movimento ---------- */
 .precos__mapa-topo { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--e-3); flex-wrap: wrap; margin-bottom: var(--e-3); }
 .precos__media { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--e-2); }
 .precos__media .rotulo-kpi { flex-basis: 100%; }
@@ -25,35 +23,8 @@
 }
 .precos__leitura p { color: var(--texto); font-size: var(--t-16); max-width: 80ch; }
 
-.precos-mapa {
-  display: grid; grid-template-columns: 44px repeat(var(--colunas), minmax(40px, 1fr)); gap: 3px;
-  overflow-x: auto; padding: 3px;
-}
-.precos-mapa__cabeca, .precos-mapa__rotulo {
-  font-size: var(--t-12); color: var(--texto-2); display: flex; align-items: center;
-  font-family: var(--precos-numero);
-}
-.precos-mapa__cabeca { justify-content: center; padding-bottom: 2px; }
-.precos-mapa__rotulo { font-family: inherit; font-weight: 500; }
-.precos-mapa__celula {
-  min-height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-  font-size: var(--t-12); color: var(--texto); position: relative;
-}
-.precos-mapa__celula--d0 { background: var(--precos-d0); }
-.precos-mapa__celula--d1 { background: var(--precos-d1); }
-.precos-mapa__celula--d2 { background: var(--precos-d2); }
-.precos-mapa__celula--d3 { background: var(--precos-d3); color: #FFFFFF; }
-.precos-mapa__celula--d4 { background: var(--precos-d4); color: #FFFFFF; }
-/* horário de baixa: contorno tracejado escuro, sem cor de status */
-.precos-mapa__celula--baixa { outline: 2px dashed var(--texto); outline-offset: -3px; font-weight: 600; }
-.precos-mapa--esqueleto .esqueleto { height: 40px; }
-
-.precos-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-6); margin-top: var(--e-3); font-size: var(--t-12); color: var(--texto-2); }
+.precos-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-6); font-size: var(--t-12); color: var(--texto-2); }
 .precos-legenda__titulo { font-weight: 600; color: var(--texto); }
-.precos-legenda__escala { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); }
-.precos-legenda__escala li, .precos-legenda__baixa { display: inline-flex; align-items: center; gap: 6px; }
-.precos-legenda__amostra { width: 18px; height: 14px; border-radius: 3px; display: inline-block; flex-shrink: 0; border: 1px solid var(--linha); }
-.precos-legenda__amostra.precos-mapa__celula--baixa { background: var(--precos-d0); outline-offset: -2px; border: 0; }
 
 .precos__tabela-mapa td, .precos__tabela-mapa th { padding: 8px 10px; }
 .precos__tabela-baixa { font-weight: 600; }
@@ -155,8 +126,6 @@
 .precos-novo__previa-legenda { color: var(--texto-3); font-size: var(--t-12); }
 
 @media (max-width: 767px) {
-  .precos-mapa { grid-template-columns: 40px repeat(var(--colunas), minmax(36px, 1fr)); }
-  .precos-mapa__celula { min-height: 44px; }
   .precos__mapa-topo { flex-direction: column; align-items: stretch; }
   .precos__mapa-topo .seletor-periodo { align-self: flex-start; }
   .precos__acoes .botao { min-height: 44px; }
@@ -171,4 +140,60 @@
   .precos-novo__resumo dt { grid-column: 1 / -1; }
   .precos-novo__navegacao .botao { min-height: 44px; flex: 1; }
   .precos-novo .seletor-periodo__opcao { min-height: 44px; }
+}
+
+/* ---------- Gráfico de linha: dia da semana × período ---------- */
+.precos__controles { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.precos-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.precos-grafico { margin: var(--e-3) 0 0; }
+.precos-grafico__corpo { display: grid; grid-template-columns: 56px minmax(0, 1fr); height: 260px; }
+.precos-grafico__eixo-y { position: relative; }
+.precos-grafico__eixo-y span {
+  position: absolute; right: 8px; transform: translateY(50%); font-size: var(--t-12); color: var(--texto-3); white-space: nowrap;
+}
+/* margem à direita para o rótulo direto no fim das linhas */
+.precos-grafico__area { position: relative; margin-right: 84px; }
+.precos-grafico__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.precos-grafico__grade { stroke: var(--linha); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.precos-grafico__base { stroke: var(--linha-forte); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.precos-grafico__mira { stroke: var(--texto-3); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.precos-grafico__linha { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.precos-grafico__ponto {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: var(--cor); box-shadow: 0 0 0 2px var(--superficie); pointer-events: none;
+}
+.precos-grafico__ponto--foco { width: 10px; height: 10px; }
+/* abaixo do normal: anel tracejado em tinta de texto, sem cor de status */
+.precos-grafico__ponto--baixa { width: 10px; height: 10px; outline: 2px dashed var(--texto); outline-offset: 2px; }
+.precos-grafico__ponto--legenda { position: static; transform: none; display: inline-block; background: var(--texto-3); margin: 0 4px; }
+.precos-grafico__fim {
+  position: absolute; left: calc(100% + 8px); transform: translateY(-50%); font-size: var(--t-12); font-weight: 600;
+  color: var(--texto-2); white-space: nowrap;
+}
+.precos-grafico__alvos { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+.precos-grafico__alvo { background: transparent; border: 0; padding: 0; border-radius: 0; cursor: default; }
+.precos-grafico__alvo:focus-visible { outline: 2px solid var(--foco); outline-offset: -2px; }
+.precos-grafico__dica {
+  position: absolute; top: 0; transform: translateX(12px); z-index: 3; pointer-events: none; min-width: 180px;
+  background: var(--superficie); border: 1px solid var(--linha-forte); border-radius: var(--raio-p); box-shadow: var(--sombra-2);
+  padding: var(--e-2) var(--e-3); font-size: var(--t-12); color: var(--texto-2);
+}
+.precos-grafico__dica--esquerda { transform: translateX(calc(-100% - 12px)); }
+.precos-grafico__dica-dia { font-weight: 600; color: var(--texto); margin-bottom: 4px; }
+.precos-grafico__dica ul { display: flex; flex-direction: column; gap: 4px; }
+.precos-grafico__dica li { display: grid; grid-template-columns: 10px auto auto; align-items: center; gap: 2px 8px; }
+.precos-grafico__dica strong { color: var(--texto); text-align: right; }
+.precos-grafico__dica-n { grid-column: 2 / -1; color: var(--texto-3); }
+.precos-grafico__amostra { width: 10px; height: 10px; border-radius: 50%; background: var(--cor); display: inline-block; flex-shrink: 0; }
+.precos-grafico__eixo-x { display: grid; grid-template-columns: repeat(7, 1fr); margin: 14px 84px 0 56px; font-size: var(--t-12); color: var(--texto-2); text-align: center; }
+
+.precos-novo__periodos { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.precos-novo__periodo-hora { font-size: var(--t-12); color: var(--texto-3); font-weight: 400; margin-left: 4px; }
+
+@media (max-width: 767px) {
+  .precos-grafico__corpo { grid-template-columns: 44px minmax(0, 1fr); height: 220px; }
+  .precos-grafico__area { margin-right: 72px; }
+  .precos-grafico__eixo-x { margin: 14px 72px 0 44px; }
+  .precos-grafico__dica { min-width: 150px; }
+  .precos__controles { flex-direction: column; align-items: flex-start; }
 }

@@ -1,6 +1,6 @@
-// Promoções automáticas ("precificação volátil"): mapa de movimento da loja, regras de desconto
+// Promoções automáticas ("precificação volátil"): movimento por dia da semana e período, regras de desconto
 // nos horários de baixa e o assistente para criar uma regra (Quando, Desconto, Em quê, Resumo).
-import { Fragment, useId, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Monitor, Plus, Search, X } from 'lucide-react'
 import { usePrototipo } from '../../contexto/Prototipo.jsx'
@@ -10,8 +10,9 @@ import {
   Botao, CabecalhoPagina, Campo, Carregando, Confirmacao, EstadoErro, EstadoVazio, Esqueleto, FaixaAviso, Indisponivel, Selo,
 } from '../../componentes/base.jsx'
 import {
-  DIAS, LIMIAR_BAIXA, SEMANAS, deMinutos, descreverDias, descreverFaixa, faixasDoCenario, guardarRegras, leituraDoMovimento,
-  motivoSemResultado, movimento, paraMinutos, regrasDoCenario, resultadoNaLoja, rotuloMinutos, sugestaoDeHorario, valorCelula,
+  DIAS, LIMIAR_BAIXA, SEMANAS, deMinutos, descreverDias, descreverFaixa, descreverPeriodo, formatarPedidos, funcionamentoDoCenario,
+  guardarRegras, leituraDoMovimento, motivoSemResultado, movimento, paraMinutos, periodosDoCenario, periodosFechados, regrasDoCenario,
+  resultadoNaLoja, rotuloMinutos, sugestaoDeHorario, valorPonto,
 } from '../../dados/precos.js'
 import '../../estilos/precos.css'
 
@@ -25,7 +26,6 @@ const TEXTO_LOJA_NOVA = 'Com menos de 4 semanas de pedidos ainda não dá para s
 
 const nomeDaChave = (ch) => ch.slice(ch.indexOf(':') + 1)
 const listar = (nomes) => new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' }).format(nomes)
-const porHora = (v) => `${decimal(v, 1)} ${v < 2 ? 'pedido' : 'pedidos'} por hora`
 
 const descreverQuando = (r) => `${descreverDias(r.dias)}, ${r.faixas.map(descreverFaixa).join(' e ')}`
 function descreverAlvo(alvo) {
@@ -68,105 +68,208 @@ function Resultado({ regra }) {
   )
 }
 
-// ---------- Mapa de movimento ----------
-function MapaMovimento({ mov, celular }) {
-  const [forma, setForma] = useState('mapa')
+// ---------- Movimento por dia da semana e período ----------
+const METRICAS = [['pedidos', 'Pedidos'], ['ticket', 'Ticket médio']]
+
+// Escala "redonda" do eixo y: 4 divisões a partir do zero
+function escalaY(maximo) {
+  if (!maximo) return { topo: 1, marcas: [0, 0.25, 0.5, 0.75, 1] }
+  const bruto = maximo / 4
+  const ordem = 10 ** Math.floor(Math.log10(bruto))
+  const passo = [1, 2, 2.5, 5, 10].map((k) => k * ordem).find((k) => k >= bruto)
+  return { topo: passo * 4, marcas: [0, 1, 2, 3, 4].map((k) => k * passo) }
+}
+
+function GraficoMovimento({ mov, metrica }) {
+  const [foco, setFoco] = useState(null)
+  const ehTicket = metrica === 'ticket'
+  const fmtEixo = (v) => (ehTicket ? `R$ ${numero(v)}` : mov.contagem ? numero(v) : decimal(v, v % 1 ? 1 : 0))
+  const fmtValor = (v) => (v == null ? 'sem pedidos' : ehTicket ? moeda(v) : mov.contagem ? String(v) : decimal(v, 1))
+  const valores = mov.series.flatMap((s) => s.pontos.map((x) => valorPonto(mov, x, metrica))).filter((v) => v != null)
+  const { topo, marcas } = escalaY(Math.max(...valores))
+  const L = 700
+  const A = 240
+  const xDe = (i) => ((i + 0.5) / DIAS.length) * L
+  const yDe = (v) => A - (v / topo) * A
+  // Linha com quebra onde não há valor (ticket sem pedidos)
+  const caminho = (s) => s.pontos.reduce((d, x, i) => {
+    const v = valorPonto(mov, x, metrica)
+    if (v == null) return d
+    const anterior = i > 0 && valorPonto(mov, s.pontos[i - 1], metrica) != null
+    return `${d}${anterior ? 'L' : 'M'}${xDe(i).toFixed(1)},${yDe(v).toFixed(1)}`
+  }, '')
+  // Rótulo direto no fim de cada linha, afastado quando dois ficam muito perto
+  const finais = mov.series
+    .map((s) => ({ s, v: valorPonto(mov, s.pontos[DIAS.length - 1], metrica) }))
+    .filter((f) => f.v != null)
+    .map((f) => ({ ...f, y: yDe(f.v) }))
+    .sort((a, b) => a.y - b.y)
+  finais.forEach((f, i) => { if (i > 0 && f.y - finais[i - 1].y < 18) f.y = finais[i - 1].y + 18 })
+  const rotuloDia = (i) => {
+    const partes = mov.series.map((s) => {
+      const x = s.pontos[i]
+      const v = valorPonto(mov, x, metrica)
+      return `${s.periodo.nome}: ${ehTicket ? (v == null ? 'sem pedidos' : `${moeda(v)} em ${plural(x.soma, 'pedido', 'pedidos')}`) : formatarPedidos(mov, v)}${!ehTicket && x.baixa ? ', abaixo do normal' : ''}`
+    })
+    return `${DIAS[i].nome}. ${partes.join('. ')}`
+  }
+
+  return (
+    <figure className="precos-grafico">
+      <div className="precos-grafico__corpo">
+        <div className="precos-grafico__eixo-y" aria-hidden>
+          {marcas.map((m) => <span key={m} className="numero" style={{ bottom: `${(m / topo) * 100}%` }}>{fmtEixo(m)}</span>)}
+        </div>
+        <div className="precos-grafico__area" onMouseLeave={() => setFoco(null)}>
+          <svg viewBox={`0 0 ${L} ${A}`} preserveAspectRatio="none" className="precos-grafico__svg" aria-hidden>
+            {marcas.map((m) => <line key={m} x1={0} x2={L} y1={yDe(m)} y2={yDe(m)} className={m === 0 ? 'precos-grafico__base' : 'precos-grafico__grade'} />)}
+            {foco != null && <line x1={xDe(foco)} x2={xDe(foco)} y1={0} y2={A} className="precos-grafico__mira" />}
+            {mov.series.map((s) => <path key={s.periodo.id} d={caminho(s)} stroke={s.periodo.cor} className="precos-grafico__linha" />)}
+          </svg>
+          {/* Pontos em HTML para ficarem redondos com o SVG esticado */}
+          {mov.series.map((s) => s.pontos.map((x, i) => {
+            const v = valorPonto(mov, x, metrica)
+            if (v == null) return null
+            const baixa = !ehTicket && x.baixa
+            return (
+              <span
+                key={`${s.periodo.id}-${x.dia.id}`}
+                aria-hidden
+                className={`precos-grafico__ponto ${baixa ? 'precos-grafico__ponto--baixa' : ''} ${foco === i ? 'precos-grafico__ponto--foco' : ''}`}
+                style={{ left: `${((i + 0.5) / DIAS.length) * 100}%`, top: `${(yDe(v) / A) * 100}%`, '--cor': s.periodo.cor }}
+              />
+            )
+          }))}
+          {finais.map((f) => (
+            <span key={f.s.periodo.id} className="precos-grafico__fim" style={{ top: `${(f.y / A) * 100}%` }} aria-hidden>{f.s.periodo.nome}</span>
+          ))}
+          <div className="precos-grafico__alvos">
+            {DIAS.map((d, i) => (
+              <button
+                key={d.id}
+                type="button"
+                className="precos-grafico__alvo"
+                aria-label={rotuloDia(i)}
+                onMouseEnter={() => setFoco(i)}
+                onFocus={() => setFoco(i)}
+                onBlur={() => setFoco(null)}
+              />
+            ))}
+          </div>
+          {foco != null && (
+            <div className={`precos-grafico__dica ${foco >= 4 ? 'precos-grafico__dica--esquerda' : ''}`} style={{ left: `${((foco + 0.5) / DIAS.length) * 100}%` }} role="presentation">
+              <p className="precos-grafico__dica-dia">{DIAS[foco].nome}</p>
+              <ul>
+                {mov.series.map((s) => {
+                  const x = s.pontos[foco]
+                  return (
+                    <li key={s.periodo.id}>
+                      <span className="precos-grafico__amostra" style={{ '--cor': s.periodo.cor }} aria-hidden />
+                      <span>{s.periodo.nome}</span>
+                      <strong className="numero">{fmtValor(valorPonto(mov, x, metrica))}</strong>
+                      {ehTicket && x.soma > 0 && <span className="precos-grafico__dica-n">{plural(x.soma, 'pedido', 'pedidos')}</span>}
+                      {!ehTicket && x.baixa && <span className="precos-grafico__dica-n">abaixo do normal</span>}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="precos-grafico__eixo-x" aria-hidden>
+        {DIAS.map((d) => <span key={d.id}>{d.curto}</span>)}
+      </div>
+    </figure>
+  )
+}
+
+function MovimentoPorPeriodo({ mov }) {
+  const [forma, setForma] = useState('grafico')
+  const [metrica, setMetrica] = useState('pedidos')
   const idForma = useId()
-  const { emRede, lojasVisiveis } = usePrototipo()
-  const { faixas, celulas, mediaLoja, maximo } = mov
-  const rotuloFaixa = (f) => `${rotuloMinutos(f.de)}–${rotuloMinutos(f.ate)}`
-  const rotuloCelula = (c) =>
-    `${c.dia.nome}, ${rotuloMinutos(c.faixa.de)} às ${rotuloMinutos(c.faixa.ate)}: ${mov.contagem ? `${c.soma} ${c.soma === 1 ? 'pedido' : 'pedidos'} em ${SEMANAS} semanas` : porHora(c.porHora)}${c.baixa ? '. Horário de baixa' : ''}`
-  // No celular a grade vira: linhas são as faixas de hora, colunas os dias
-  const linhas = celular ? faixas.map((f, j) => ({ rotulo: rotuloMinutos(f.de), itens: celulas.map((l) => l[j]) })) : celulas.map((l) => ({ rotulo: l[0].dia.curto, itens: l }))
-  const colunas = celular ? DIAS.map((d) => d.curto) : faixas.map((f) => rotuloMinutos(f.de))
-  const topo = mov.contagem ? mov.maximoSoma : maximo
-  const degraus = [0, 1, 2, 3, 4].map((k) => ({ k, de: (topo * k) / 5, ate: (topo * (k + 1)) / 5 }))
-  const fmtDegrau = (v) => (mov.contagem ? String(Math.round(v)) : decimal(v, 1))
+  const idMetrica = useId()
+  const { cenarioId, emRede, lojasVisiveis } = usePrototipo()
+  const ehTicket = metrica === 'ticket'
+  const fechados = periodosFechados(cenarioId)
+  const valorTabela = (x) => {
+    const v = valorPonto(mov, x, metrica)
+    if (v == null) return '—'
+    return ehTicket ? moeda(v) : mov.contagem ? String(v) : decimal(v, 1)
+  }
+  const unidade = ehTicket ? `ticket médio por pedido, nas últimas ${SEMANAS} semanas` : mov.contagem ? `pedidos nas últimas ${SEMANAS} semanas` : `pedidos por dia, em média, nas últimas ${SEMANAS} semanas`
 
   return (
     <>
       <div className="precos__mapa-topo">
         <p className="precos__media">
-          <span className="rotulo-kpi">Média {emRede ? 'da rede' : 'da loja'}</span>
-          <span className="numero precos__media-valor">{mov.contagem ? decimal(mov.mediaCelula, 1) : decimal(mediaLoja, 1)}</span>
-          <span className="precos__media-unidade">{mov.contagem ? `pedidos por turno, em média, nas últimas ${SEMANAS} semanas` : `${mediaLoja < 2 ? 'pedido' : 'pedidos'} por hora, nas últimas ${SEMANAS} semanas`}</span>
+          <span className="rotulo-kpi">{ehTicket ? 'Ticket médio' : mov.contagem ? 'Pedidos' : 'Média'} {emRede ? 'da rede' : 'da loja'}</span>
+          <span className="numero precos__media-valor">{ehTicket ? moeda(mov.ticket) : mov.contagem ? numero(mov.total) : decimal(mov.porDia, 1)}</span>
+          <span className="precos__media-unidade">{unidade}</span>
         </p>
-        <div className="seletor-periodo" role="group" aria-labelledby={idForma}>
-          <span id={idForma} className="visualmente-oculto">Ver o movimento como</span>
-          <button type="button" className="seletor-periodo__opcao" aria-pressed={forma === 'mapa'} onClick={() => setForma('mapa')}>Mapa</button>
-          <button type="button" className="seletor-periodo__opcao" aria-pressed={forma === 'tabela'} onClick={() => setForma('tabela')}>Tabela</button>
+        <div className="precos__controles">
+          <div className="seletor-periodo" role="group" aria-labelledby={idMetrica}>
+            <span id={idMetrica} className="visualmente-oculto">Métrica</span>
+            {METRICAS.map(([v, r]) => (
+              <button key={v} type="button" className="seletor-periodo__opcao" aria-pressed={metrica === v} onClick={() => setMetrica(v)}>{r}</button>
+            ))}
+          </div>
+          <div className="seletor-periodo" role="group" aria-labelledby={idForma}>
+            <span id={idForma} className="visualmente-oculto">Ver o movimento como</span>
+            <button type="button" className="seletor-periodo__opcao" aria-pressed={forma === 'grafico'} onClick={() => setForma('grafico')}>Gráfico</button>
+            <button type="button" className="seletor-periodo__opcao" aria-pressed={forma === 'tabela'} onClick={() => setForma('tabela')}>Tabela</button>
+          </div>
         </div>
       </div>
 
       <div className="precos__leitura" role="note">
         <span className="rotulo-kpi">Leitura automática</span>
-        <p>{leituraDoMovimento(mov)}</p>
+        <p>{leituraDoMovimento(mov, metrica)}</p>
       </div>
 
-      {forma === 'mapa' ? (
-        <>
-          <div
-            className="precos-mapa"
-            role="group"
-            aria-label={`Mapa de movimento: média de pedidos por hora nas últimas ${SEMANAS} semanas`}
-            style={{ '--colunas': colunas.length }}
-          >
-            <span className="precos-mapa__canto" aria-hidden />
-            {colunas.map((c) => <span key={c} className="precos-mapa__cabeca" aria-hidden>{c}</span>)}
-            {linhas.map((l) => (
-              <Fragment key={l.rotulo}>
-                <span className="precos-mapa__rotulo" aria-hidden>{l.rotulo}</span>
-                {l.itens.map((c) => (
-                  <span
-                    key={`${c.dia.id}-${c.faixa.id}`}
-                    role="img"
-                    aria-label={rotuloCelula(c)}
-                    title={rotuloCelula(c)}
-                    className={`precos-mapa__celula precos-mapa__celula--d${c.degrau} ${c.baixa ? 'precos-mapa__celula--baixa' : ''}`}
-                  >
-                    <span className="numero">{valorCelula(mov, c)}</span>
-                  </span>
-                ))}
-              </Fragment>
-            ))}
-          </div>
-          <div className="precos-legenda" aria-label="Legenda do mapa" role="group">
-            <span className="precos-legenda__titulo">{mov.contagem ? `Pedidos no turno (${SEMANAS} semanas)` : 'Pedidos por hora'}</span>
-            <ul className="precos-legenda__escala">
-              {degraus.map((d) => (
-                <li key={d.k}>
-                  <span className={`precos-legenda__amostra precos-mapa__celula--d${d.k}`} aria-hidden />
-                  <span className="numero">{d.k === 4 ? `${fmtDegrau(d.de)} ou mais` : `${fmtDegrau(d.de)} a ${fmtDegrau(d.ate)}`}</span>
-                </li>
-              ))}
-            </ul>
-            <span className="precos-legenda__baixa">
-              <span className="precos-legenda__amostra precos-mapa__celula--baixa" aria-hidden />
-              Horário de baixa: abaixo de {Math.round(LIMIAR_BAIXA * 100)}% da média {emRede ? 'da rede' : 'da loja'} {mov.contagem ? <>(menos de <span className="numero">{decimal(mov.mediaCelula * LIMIAR_BAIXA, 1)}</span> pedidos no turno em {SEMANAS} semanas)</> : <>(menos de <span className="numero">{decimal(mediaLoja * LIMIAR_BAIXA, 1)}</span> por hora)</>}
-            </span>
-          </div>
-        </>
+      <ul className="precos-legenda" aria-label="Períodos">
+        {mov.series.map((s) => (
+          <li key={s.periodo.id}>
+            <span className="precos-grafico__amostra" style={{ '--cor': s.periodo.cor }} aria-hidden />
+            <span className="precos-legenda__titulo">{s.periodo.nome}</span>
+            <span className="numero">{descreverPeriodo(s.periodo)}</span>
+          </li>
+        ))}
+        {!ehTicket && forma === 'grafico' && (
+          <li className="precos-legenda__baixa">
+            <span className="precos-grafico__ponto precos-grafico__ponto--baixa precos-grafico__ponto--legenda" aria-hidden />
+            Abaixo de {Math.round(LIMIAR_BAIXA * 100)}% da média do período
+          </li>
+        )}
+      </ul>
+
+      {forma === 'grafico' ? (
+        <GraficoMovimento mov={mov} metrica={metrica} />
       ) : (
         <div className="tabela-rolagem">
           <table className="tabela tabela--compacta precos__tabela-mapa">
-            <caption className="visualmente-oculto">{mov.contagem ? `Pedidos por turno nas últimas ${SEMANAS} semanas, por dia` : `Média de pedidos por hora nas últimas ${SEMANAS} semanas, por dia e faixa de horário`}</caption>
+            <caption className="visualmente-oculto">{ehTicket ? 'Ticket médio' : mov.contagem ? 'Pedidos' : 'Média de pedidos por dia'} nas últimas {SEMANAS} semanas, por dia da semana e período</caption>
             <thead>
               <tr>
                 <th scope="col">Dia</th>
-                {faixas.map((f) => <th key={f.id} scope="col" className="tabela__num">{rotuloFaixa(f)}</th>)}
+                {mov.series.map((s) => <th key={s.periodo.id} scope="col" className="tabela__num">{s.periodo.nome} <span className="tabela__secundario numero">{descreverPeriodo(s.periodo)}</span></th>)}
               </tr>
             </thead>
             <tbody>
-              {celulas.map((l) => (
-                <tr key={l[0].dia.id}>
-                  <th scope="row">{l[0].dia.nome}</th>
-                  {l.map((c) => (
-                    <td key={c.faixa.id} className={`tabela__num ${c.baixa ? 'precos__tabela-baixa' : ''}`}>
-                      <span className="numero">{valorCelula(mov, c)}</span>
-                      {c.baixa && <span className="precos__tabela-marca"> baixa</span>}
-                    </td>
-                  ))}
+              {DIAS.map((d, i) => (
+                <tr key={d.id}>
+                  <th scope="row">{d.nome}</th>
+                  {mov.series.map((s) => {
+                    const x = s.pontos[i]
+                    const baixa = !ehTicket && x.baixa
+                    return (
+                      <td key={s.periodo.id} className={`tabela__num ${baixa ? 'precos__tabela-baixa' : ''}`}>
+                        <span className="numero">{valorTabela(x)}</span>
+                        {baixa && <span className="precos__tabela-marca"> baixa</span>}
+                        {ehTicket && x.soma > 0 && <span className="precos__tabela-marca numero"> ({x.soma})</span>}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -174,10 +277,11 @@ function MapaMovimento({ mov, celular }) {
         </div>
       )}
       <p className="bloco__nota">
-        {emRede
-          ? `Soma das ${lojasVisiveis.length} lojas. Cada loja tem os seus horários de baixa: escolha uma loja para ver o mapa dela.`
-          : mov.contagem ? `Pedidos válidos em cada turno, somando as últimas ${SEMANAS} semanas. Com pouco volume, contagem diz mais que média por hora.` : `Média de pedidos válidos por hora em cada faixa, nas últimas ${SEMANAS} semanas.`}
-        {faixas.some((x) => x.duracao < 1) && ' A faixa das 23h vai só até 23h30 e está convertida para pedidos por hora.'}
+        {emRede ? `Soma das ${lojasVisiveis.length} lojas. Cada loja tem os seus dias de baixa: escolha uma loja para ver o movimento dela. ` : ''}
+        {ehTicket
+          ? `Faturamento dividido pelo número de pedidos válidos em cada dia e período.${mov.contagem ? ' Com poucos pedidos por ponto, o ticket oscila muito; olhe o número de pedidos ao lado.' : ''}`
+          : mov.contagem ? `Pedidos válidos em cada dia e período, somando as últimas ${SEMANAS} semanas. Com pouco volume, contagem diz mais que média.` : `Média de pedidos válidos por dia em cada período, nas últimas ${SEMANAS} semanas.`}
+        {fechados.length > 0 && ` ${listar(fechados.map((p) => p.nome))}: fora do horário de funcionamento.`}
       </p>
     </>
   )
@@ -185,15 +289,13 @@ function MapaMovimento({ mov, celular }) {
 
 function EsqueletoMapa() {
   return (
-    <Carregando oQue="o mapa de movimento">
-      <div className="precos-mapa precos-mapa--esqueleto" style={{ '--colunas': 11 }} aria-hidden>
-        {Array.from({ length: 8 * 12 }, (_, i) => <span key={i} className="esqueleto" />)}
-      </div>
+    <Carregando oQue="o movimento da loja">
+      <Esqueleto linhas={1} altura="280px" />
     </Carregando>
   )
 }
 
-// ---------- Tela: lista de regras e mapa ----------
+// ---------- Tela: movimento e lista de regras ----------
 export function PrecosPorHorario() {
   const { cen, cenarioId, emRede, lojaId, estadoForcado, avisar } = usePrototipo()
   const navegar = useNavigate()
@@ -248,13 +350,13 @@ export function PrecosPorHorario() {
   // Bloco do mapa
   let mapa
   if (estadoForcado === 'carregando') mapa = <EsqueletoMapa />
-  else if (estadoForcado === 'erro' && !tentouMapa) mapa = <EstadoErro oQue="o mapa de movimento" aoTentar={() => setTentouMapa(true)} compacto />
+  else if (estadoForcado === 'erro' && !tentouMapa) mapa = <EstadoErro oQue="o movimento da loja" aoTentar={() => setTentouMapa(true)} compacto />
   else if (!mov) {
     mapa = (
       <EstadoVazio
         compacto
         titulo={TEXTO_LOJA_NOVA}
-        texto="O mapa aparece sozinho quando a loja completar 4 semanas de pedidos. Enquanto isso, você pode criar uma regra escolhendo os dias e horários."
+        texto="O gráfico aparece sozinho quando a loja completar 4 semanas de pedidos. Enquanto isso, você pode criar uma regra escolhendo os dias e horários."
         acao={<Botao para="/promocoes-automaticas/nova">Criar regra manualmente</Botao>}
       />
     )
@@ -264,10 +366,10 @@ export function PrecosPorHorario() {
     mapa = (
       <div className="precos__indisponivel">
         <Indisponivel motivo={MOTIVO_FORA} />
-        <p className="bloco__nota">As regras continuam valendo nos horários escolhidos. Só o mapa e o resultado ficam sem número.</p>
+        <p className="bloco__nota">As regras continuam valendo nos horários escolhidos. Só o gráfico e o resultado ficam sem número.</p>
       </div>
     )
-  } else mapa = <MapaMovimento mov={mov} celular={celular} />
+  } else mapa = <MovimentoPorPeriodo mov={mov} />
 
   // Bloco das regras
   let conteudo
@@ -354,7 +456,7 @@ export function PrecosPorHorario() {
       <section className="bloco" aria-labelledby="precos-mapa-titulo">
         <div className="bloco__cabecalho">
           <h2 id="precos-mapa-titulo">Movimento {emRede ? 'da rede' : 'da loja'}</h2>
-          <span className="bloco__sub">Últimas {SEMANAS} semanas</span>
+          <span className="bloco__sub">Por dia da semana e período, últimas {SEMANAS} semanas</span>
         </div>
         {mapa}
       </section>
@@ -395,9 +497,9 @@ const descontoNum = (s) => Number(String(s).replace(',', '.'))
 
 // Opções de horário a cada 30 min dentro do funcionamento
 function horariosDoCenario(cenarioId) {
-  const faixas = faixasDoCenario(cenarioId)
+  const { de, ate } = funcionamentoDoCenario(cenarioId)
   const lista = []
-  for (let m = faixas[0].de; m <= faixas[faixas.length - 1].ate; m += 30) lista.push(deMinutos(m))
+  for (let m = de; m <= ate; m += 30) lista.push(deMinutos(m))
   return lista
 }
 
@@ -636,6 +738,15 @@ export function CriarPrecoHorario() {
     mudar({ dias: sugestao.dias, faixas: sugestao.faixas.map((x) => ({ ...x })) })
     setErros({})
   }
+  const periodos = useMemo(() => periodosDoCenario(cenarioId).map((p) => ({ ...p, faixa: { de: deMinutos(p.de), ate: deMinutos(p.ate) } })), [cenarioId])
+  const temPeriodo = (p) => f.faixas.some((x) => x.de === p.faixa.de && x.ate === p.faixa.ate)
+  // Liga e desliga um período inteiro como faixa; faixas vazias dão lugar a ele
+  const alternarPeriodo = (p) => {
+    const cheias = f.faixas.filter((x) => x.de || x.ate)
+    const novas = temPeriodo(p) ? cheias.filter((x) => !(x.de === p.faixa.de && x.ate === p.faixa.ate)) : [...cheias, { ...p.faixa }]
+    mudar({ faixas: novas.length ? novas.sort((a, b) => paraMinutos(a.de || '0:0') - paraMinutos(b.de || '0:0')) : [{ de: '', ate: '' }] })
+    setErros({})
+  }
   const mudarFaixa = (i, campo, valor) => mudar({ faixas: f.faixas.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)) })
 
   const validar = (p) => {
@@ -776,7 +887,7 @@ export function CriarPrecoHorario() {
                 ) : sugestao ? (
                   <>
                     <p>
-                      <strong>Sugestão pelos seus horários de baixa:</strong> {descreverQuando(sugestao)}, {sugestao.contagem ? <>com <span className="numero">{sugestao.pedidos}</span> {sugestao.pedidos === 1 ? 'pedido' : 'pedidos'} em {SEMANAS} semanas.</> : <>com <span className="numero">{decimal(sugestao.porHora, 1)}</span> {sugestao.porHora < 2 ? 'pedido' : 'pedidos'} por hora em média.</>}
+                      <strong>Sugestão pelos seus horários de baixa:</strong> {descreverDias(sugestao.dias)}, {sugestao.periodo.nome.toLowerCase()} ({descreverFaixa(sugestao.faixas[0])}), {sugestao.contagem ? <>com <span className="numero">{sugestao.pedidos}</span> {sugestao.pedidos === 1 ? 'pedido' : 'pedidos'} em {SEMANAS} semanas.</> : <>com <span className="numero">{decimal(sugestao.valor, 1)}</span> {sugestao.valor < 2 ? 'pedido' : 'pedidos'} por dia em média.</>}
                     </p>
                     <Botao onClick={usarSugestao}>Usar horários sugeridos</Botao>
                   </>
@@ -805,7 +916,14 @@ export function CriarPrecoHorario() {
 
               <fieldset className="precos-novo__grupo">
                 <legend className="campo__rotulo">Horários</legend>
-                <p className="campo__ajuda">Dentro do funcionamento da loja: {rotuloMinutos(paraMinutos(horarios[0]))} às {rotuloMinutos(paraMinutos(horarios[horarios.length - 1]))}.</p>
+                <p className="campo__ajuda">Escolha um período ou ajuste o horário exato. Dentro do funcionamento da loja: {rotuloMinutos(paraMinutos(horarios[0]))} às {rotuloMinutos(paraMinutos(horarios[horarios.length - 1]))}.</p>
+                <div className="precos-novo__periodos" role="group" aria-label="Períodos">
+                  {periodos.map((p) => (
+                    <button key={p.id} type="button" className="precos-novo__dia" aria-pressed={temPeriodo(p)} onClick={() => alternarPeriodo(p)}>
+                      {p.nome} <span className="numero precos-novo__periodo-hora">{descreverPeriodo(p)}</span>
+                    </button>
+                  ))}
+                </div>
                 {f.faixas.map((x, i) => (
                   <div key={i} className="precos-novo__faixa">
                     <Campo rotulo={f.faixas.length > 1 ? `Início da faixa ${i + 1}` : 'Início'} erro={erros[`faixa${i}`]}>
@@ -832,7 +950,7 @@ export function CriarPrecoHorario() {
                   </div>
                 ))}
                 {erros.faixas && <p className="campo__erro"><AlertTriangle size={14} aria-hidden /> {erros.faixas}</p>}
-                {f.faixas.length < 3 && (
+                {f.faixas.length < 5 && (
                   <Botao variante="texto" icone={Plus} className="precos-novo__adicionar" onClick={() => mudar({ faixas: [...f.faixas, { de: '', ate: '' }] })}>Adicionar outra faixa</Botao>
                 )}
               </fieldset>

@@ -457,8 +457,17 @@ textarea.campo__entrada { resize: vertical; }
 }
 .menu-lateral :focus-visible { outline-color: var(--vqp-amarelo); }
 .menu-lateral__marca { height: var(--cabecalho-altura); display: flex; align-items: center; padding: 0 6px; flex-shrink: 0; }
-.menu-lateral--recolhido { width: var(--menu-recolhido); overflow: visible; padding: 0 var(--e-2) var(--e-3); }
+/* recolhido: acima do cabeçalho (50), para as dicas dos ícones não ficarem por baixo dele */
+.menu-lateral--recolhido { width: var(--menu-recolhido); overflow: visible; padding: 0 var(--e-2) var(--e-3); z-index: 55; }
 .menu-lateral--recolhido .menu-lateral__marca { justify-content: center; padding: 0; }
+.menu-lateral__seta {
+  margin-left: auto; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--raio-p);
+  border: 0; background: none; color: var(--sobre-marinho-2);
+}
+.menu-lateral__seta:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+/* recolhido: a seta desce para baixo do logo, dentro da barra */
+.menu-lateral--recolhido .menu-lateral__marca { flex-direction: column; height: auto; gap: 6px; padding: 14px 0 6px; }
+.menu-lateral--recolhido .menu-lateral__seta { position: relative; margin: 0; }
 .menu { display: flex; flex-direction: column; gap: 2px; }
 .menu--rodape { margin-top: auto; padding-top: var(--e-2); border-top: 1px solid rgba(255, 255, 255, 0.14); }
 .menu__link {

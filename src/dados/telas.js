@@ -304,7 +304,7 @@ export const TELAS = [
     permissao: 'precos',
     objetivo: 'Dar desconto automático nos horários de baixa da loja, a partir do histórico de vendas (precificação volátil, pedido de 15/10).',
     conteudo: [
-      'Mapa de movimento por dia e hora, com os horários de baixa marcados.',
+      'Gráfico de linha por dia da semana, com períodos padronizados (manhã, almoço, tarde, jantar, madrugada) e métrica de pedidos ou ticket médio; dias abaixo do normal marcados (feedback do time, 22/10).',
       'Regras de desconto percentual por dias e horários, para produtos ou categorias (com "exceto") e, na rede, por loja.',
       'Preço riscado no app e no cardápio web só nesses horários.',
     ],

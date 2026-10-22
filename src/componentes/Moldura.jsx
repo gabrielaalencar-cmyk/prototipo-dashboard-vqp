@@ -1,7 +1,7 @@
 // Moldura do dashboard (seções 6 e 7): menu lateral recolhível, cabeçalho, barras do celular.
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, ChevronDown, ChevronsUpDown, Ellipsis, LogOut, PanelLeftClose, PanelLeftOpen, WifiOff } from 'lucide-react'
+import { Bell, ChevronDown, ChevronsLeft, ChevronsRight, ChevronsUpDown, Ellipsis, LogOut, PanelLeftClose, PanelLeftOpen, WifiOff } from 'lucide-react'
 import { usePrototipo } from '../contexto/Prototipo.jsx'
 import { MENU, RODAPE, itemAtivo, itensBarraInferior, menuDoPerfil } from '../dados/menu.js'
 import { useEhCelular } from '../utilitarios/ganchos.js'
@@ -119,6 +119,17 @@ function MenuLateral() {
     <nav className={`menu-lateral ${recolhido ? 'menu-lateral--recolhido' : ''}`} aria-label="Menu principal">
       <div className="menu-lateral__marca">
         <LogoVoceQpad tamanho={recolhido ? 28 : 24} soSimbolo={recolhido} />
+        {/* atalho no topo; o botão do rodapé continua valendo */}
+        <button
+          type="button"
+          className="menu-lateral__seta"
+          onClick={alternar}
+          aria-expanded={!recolhido}
+          aria-label={recolhido ? 'Expandir menu' : 'Recolher menu'}
+          data-dica={recolhido ? 'Expandir menu' : undefined}
+        >
+          {recolhido ? <ChevronsRight size={16} aria-hidden /> : <ChevronsLeft size={18} aria-hidden />}
+        </button>
       </div>
       <GatilhoSeletor recolhido={recolhido} />
       <ul className="menu">
