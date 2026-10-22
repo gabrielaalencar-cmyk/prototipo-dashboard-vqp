@@ -60,8 +60,8 @@ export function Entrar() {
     <div className="entrar">
       <section className="entrar__apresentacao" aria-label="VocêQpad">
         <LogoVoceQpad tamanho={34} />
-        <p className="entrar__titulo">O painel da sua loja: o que está acontecendo agora e o que fazer.</p>
-        <p className="entrar__texto">Pedidos, cardápio, clientes e resultados no mesmo lugar.</p>
+        <p className="entrar__titulo">Acompanhe os resultados e gerencie sua loja no mesmo lugar.</p>
+        <p className="entrar__texto">Veja como estão as vendas e resolva o dia a dia: pedidos, cardápio, clientes, campanhas e configurações, de uma loja ou da rede inteira.</p>
       </section>
       <main className="entrar__caixa" aria-labelledby="titulo-entrar">
         {modo === 'entrar' && (
