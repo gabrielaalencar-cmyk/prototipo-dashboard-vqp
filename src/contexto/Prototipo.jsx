@@ -198,6 +198,31 @@ function ProvedorCenario({ children, chassi }) {
     [simularFalha, semInternet],
   )
 
+  // Produto novo. A categoria e os complementos vão pelo nome, porque cada loja tem os seus ids;
+  // a loja que não tem a categoria ganha uma nova, e o complemento que ela não tem fica de fora.
+  const adicionarProduto = useCallback(
+    async (id, { categoriaNome, grupoNomes = [], ...produto }) => {
+      await esperar(500)
+      if (falhar()) throw new Error('falha')
+      const atual = cardapios[id]
+      const novoId = `p${Math.max(0, ...atual.produtos.map((p) => Number(p.id.slice(1)) || 0)) + 1}`
+      setCardapios((m) => {
+        const c = clonarCardapio(m[id])
+        let cat = c.categorias.find((x) => x.nome === categoriaNome)
+        if (!cat) {
+          cat = { id: `nova-${Date.now()}`, nome: categoriaNome }
+          c.categorias = [...c.categorias, cat]
+        }
+        const grupos = grupoNomes.map((n) => c.grupos.find((g) => g.nome === n)?.id).filter(Boolean)
+        c.produtos = [...c.produtos, { ...produto, id: novoId, categoria: cat.id, grupos, estado: 'ativo' }]
+        return { ...m, [id]: c }
+      })
+      return novoId
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cardapios, simularFalha, semInternet],
+  )
+
   // Edição genérica do cardápio (renomear e reordenar grupos e categorias)
   const editarCardapio = useCallback(
     async (id, alterar) => {
@@ -276,7 +301,7 @@ function ProvedorCenario({ children, chassi }) {
     // tempo
     agora, statusVerificadoEm, horaAtualizacaoAnalitico: '19:30', horaAgora: hora(agora),
     // ações
-    mudarStatusLoja, alterarItemCardapio, excluirProduto, adicionarCategoria, editarCardapio, estornar, pedidosDaLoja,
+    mudarStatusLoja, alterarItemCardapio, excluirProduto, adicionarCategoria, adicionarProduto, editarCardapio, estornar, pedidosDaLoja,
     // alertas
     alertasAtivos, alertasDispensados, naoLidos, dispensarAlerta, restaurarAlerta, marcarLidos,
     // interface

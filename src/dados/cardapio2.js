@@ -34,7 +34,7 @@ export function detalhesProduto(produto, { semPdv, sigla, modalidades = MODALIDA
     nome: produto.nome,
     descricao: produto.descricao || '',
     // foto ilustrativa do cardápio (mesma da lista), quando houver
-    foto: fotoDoProduto(produto.nome) ? { nome: 'Foto atual', url: fotoDoProduto(produto.nome) } : null,
+    foto: produto.foto ? { nome: 'Foto atual', url: produto.foto } : fotoDoProduto(produto.nome) ? { nome: 'Foto atual', url: fotoDoProduto(produto.nome) } : null,
     // preço e promoção do Delivery; com um preço só, valem para todas as modalidades
     preco: emTexto(produto.preco),
     precoPromo: '',
@@ -48,6 +48,17 @@ export function detalhesProduto(produto, { semPdv, sigla, modalidades = MODALIDA
     modalidades: Object.fromEntries(modalidades.map((m) => [m.id, true])),
     restringir: false,
     faixas: [{ id: 'f1', dias: 'todos', inicio: '11:00', fim: '15:00' }],
+  }
+}
+
+// Produto em branco para o cadastro. Sem PDV, o código sai na sequência da loja; com PDV, vem vazio
+// porque precisa ser o mesmo do cadastro do PDV.
+export function produtoEmBranco(cardapio, { semPdv, sigla, modalidades = MODALIDADES }) {
+  const proximo = Math.max(0, ...cardapio.produtos.map((p) => Number(p.id.replace('p', '')) || 0)) + 1
+  return {
+    ...detalhesProduto({ id: `p${proximo}`, nome: '', preco: null }, { semPdv, sigla, modalidades }),
+    codigo: semPdv ? `${sigla}-${String(proximo).padStart(4, '0')}` : '',
+    foto: null,
   }
 }
 

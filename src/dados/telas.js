@@ -151,6 +151,8 @@ export const TELAS = [
     objetivo: 'Cadastrar ou mudar um item.',
     conteudo: [
       'Abas Informações, Complementos e Disponibilidade, com prévia no app ao lado.',
+      'Cadastro pelo "Novo produto" do cardápio ou pelo "Adicionar produto" de uma categoria, com a categoria escolhida no formulário.',
+      'Na rede, quem vê mais de uma loja pode criar o produto nesta e em outras lojas ao mesmo tempo, com resultado loja por loja.',
       'Código gerado sozinho quando a loja não tem PDV; campos de horário "Início" e "Fim".',
       'Salvar com confirmação "Produto salvo"; aviso ao sair sem salvar.',
       'Celular: abas viram seções empilhadas; Complementos mostra um grupo por vez.',

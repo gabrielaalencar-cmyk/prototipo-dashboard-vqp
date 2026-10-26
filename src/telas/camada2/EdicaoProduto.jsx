@@ -1,15 +1,17 @@
-// T09. Produto, edição: abas no computador, seções empilhadas no celular, prévia no app ao lado.
+// T09. Produto, edição e cadastro: abas no computador, seções empilhadas no celular, prévia no app ao lado.
+// No cadastro, quem vê mais de uma loja da rede pode criar o produto em outras lojas ao mesmo tempo.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Copy, ImageOff, Info, Plus } from 'lucide-react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { AlertTriangle, ArrowLeft, ChevronLeft, ChevronRight, Copy, ImageOff, Info, Plus, Search } from 'lucide-react'
 import { usePrototipo } from '../../contexto/Prototipo.jsx'
 import { useEhCelular, useTitulo } from '../../utilitarios/ganchos.js'
-import { moeda, plural } from '../../utilitarios/formatos.js'
-import { OPCOES_DIAS, detalhesProduto, gruposDoProduto, modalidadesDaLoja, permitePrecoPorModalidade } from '../../dados/cardapio2.js'
+import { hora, moeda, plural } from '../../utilitarios/formatos.js'
+import { OPCOES_DIAS, detalhesProduto, gruposDoProduto, modalidadesDaLoja, permitePrecoPorModalidade, produtoEmBranco } from '../../dados/cardapio2.js'
 import { Abas, Botao, CabecalhoPagina, Campo, Carregando, EstadoErro, EstadoVazio, Esqueleto, FaixaAviso, Interruptor, Selo, Sobreposicao } from '../../componentes/base.jsx'
 import '../../estilos/cardapio2.css'
 
 const LIMITE_DESCRICAO = 300
+const normalizar = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 // "14,50" -> 14.5; vazio -> null; inválido -> NaN
 const lerValor = (s) => {
@@ -18,6 +20,7 @@ const lerValor = (s) => {
   if (!/^\d{1,5}([.,]\d{1,2})?$/.test(t)) return NaN
   return Number(t.replace(',', '.'))
 }
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
 const lerInteiro = (s) => (/^\d{1,2}$/.test(String(s).trim()) ? Number(s) : NaN)
 
 // Preço e promoção que valem numa modalidade. Sem preço próprio, a modalidade segue o Delivery.
@@ -45,6 +48,7 @@ function validar(dados, grupos, modalidades) {
   const e = {}
   const porModalidade = dados.porModalidade && permitePrecoPorModalidade(modalidades)
   const outras = modalidades.filter((m) => m.id !== 'delivery')
+  if ('categoria' in dados && !dados.categoria) e.categoria = 'Escolha em que categoria o produto aparece.'
   if (!dados.nome.trim()) e.nome = 'Dê um nome ao produto, como "Pastel de carne".'
   if (dados.descricao.length > LIMITE_DESCRICAO) e.descricao = `A descrição passou de ${LIMITE_DESCRICAO} caracteres.`
   validarPreco(e, { preco: dados.preco, promo: dados.precoPromo, chavePreco: 'preco', chavePromo: 'precoPromo' })
@@ -81,21 +85,24 @@ function validar(dados, grupos, modalidades) {
   return e
 }
 
+// O erro de "Onde criar" fica fora das abas
 const abaDoErro = (chave) =>
-  /^(nome|descricao|preco|precoPromo|codigo)$|^(preco|promo)-/.test(chave) ? 'info' : /^(grupo|item)-/.test(chave) ? 'complementos' : 'disponibilidade'
+  chave === 'lojas' ? null : /^(categoria|nome|descricao|preco|precoPromo|codigo)$|^(preco|promo)-/.test(chave) ? 'info' : /^(grupo|item)-/.test(chave) ? 'complementos' : 'disponibilidade'
 
 export function EdicaoProduto() {
   const { id } = useParams()
   const { cardapio, lojaId, estadoForcado } = usePrototipo()
   const [tentou, setTentou] = useState(false)
-  useTitulo('Editar produto')
+  const novo = id === 'novo'
+  const titulo = novo ? 'Novo produto' : 'Editar produto'
+  useTitulo(titulo)
   const produto = cardapio.produtos.find((p) => p.id === 'p' + id)
 
   if (estadoForcado === 'carregando') {
     return (
       <div className="pagina">
-        <CabecalhoPagina titulo="Editar produto" />
-        <Carregando oQue="o produto">
+        <CabecalhoPagina titulo={titulo} />
+        <Carregando oQue={novo ? 'o cardápio' : 'o produto'}>
           <div className="edicao-produto__grade">
             <div className="bloco"><Esqueleto linhas={6} altura="40px" /></div>
             <div className="bloco"><Esqueleto linhas={4} /></div>
@@ -107,8 +114,21 @@ export function EdicaoProduto() {
   if (estadoForcado === 'erro' && !tentou) {
     return (
       <div className="pagina">
-        <CabecalhoPagina titulo="Editar produto" />
-        <EstadoErro oQue="o produto" aoTentar={() => setTentou(true)} />
+        <CabecalhoPagina titulo={titulo} />
+        <EstadoErro oQue={novo ? 'o cardápio' : 'o produto'} aoTentar={() => setTentou(true)} />
+      </div>
+    )
+  }
+  if (novo && estadoForcado !== 'vazio' && cardapio.categorias.length > 0) return <FormularioProduto key={`${lojaId}-novo`} novo />
+  if (novo) {
+    return (
+      <div className="pagina">
+        <CabecalhoPagina titulo={titulo} />
+        <EstadoVazio
+          titulo="Crie uma categoria antes do primeiro produto."
+          texto="Todo produto fica dentro de uma categoria, como “Pastéis salgados”."
+          acao={<Botao variante="principal" para="/cardapio">Voltar ao cardápio</Botao>}
+        />
       </div>
     )
   }
@@ -127,15 +147,22 @@ export function EdicaoProduto() {
   return <FormularioProduto key={`${lojaId}-${produto.id}`} produto={produto} />
 }
 
-function FormularioProduto({ produto }) {
-  const { cardapio, loja, cen, cenarioId, avisar, simularFalha, podeAgir } = usePrototipo()
+function FormularioProduto({ produto, novo }) {
+  const { cardapio, cardapios, loja, lojaId, cen, cenarioId, avisar, simularFalha, podeAgir, temSeletor, estadoLojas, adicionarProduto } = usePrototipo()
   const celular = useEhCelular()
   const navegar = useNavigate()
+  const [params] = useSearchParams()
   const modalidadesLoja = useMemo(() => modalidadesDaLoja(cenarioId), [cenarioId])
   const comPrecoPorModalidade = permitePrecoPorModalidade(modalidadesLoja)
   const outrasModalidades = modalidadesLoja.filter((m) => m.id !== 'delivery')
-  const [dados, setDados] = useState(() => detalhesProduto(produto, { semPdv: !!loja.semPdv, sigla: cen.marca.sigla, modalidades: modalidadesLoja }))
-  const [grupos, setGrupos] = useState(() => gruposDoProduto(produto, cardapio))
+  const [dados, setDados] = useState(() => {
+    const opcoes = { semPdv: !!loja.semPdv, sigla: cen.marca.sigla, modalidades: modalidadesLoja }
+    if (!novo) return detalhesProduto(produto, opcoes)
+    // ?categoria=c2 vem do "Adicionar produto" de uma categoria
+    const categoria = params.get('categoria')
+    return { ...produtoEmBranco(cardapio, opcoes), categoria: cardapio.categorias.some((c) => c.id === categoria) ? categoria : '' }
+  })
+  const [grupos, setGrupos] = useState(() => (novo ? [] : gruposDoProduto(produto, cardapio)))
   const [base, setBase] = useState(() => JSON.stringify({ dados, grupos }))
   const [aba, setAba] = useState('info')
   const [erros, setErros] = useState({})
@@ -144,7 +171,16 @@ function FormularioProduto({ produto }) {
   const [saida, setSaida] = useState(null)
   const [grupoVisivel, setGrupoVisivel] = useState(0)
   const [grupoNovo, setGrupoNovo] = useState('')
-  const nomeSalvo = useRef(produto.nome)
+  const nomeSalvo = useRef(produto?.nome)
+
+  // Criar também em outras lojas: só no cadastro, para quem vê mais de uma loja da rede
+  const lojasExtras = novo && cen.rede && temSeletor ? cen.lojas.filter((l) => !l.teste && l.id !== lojaId) : []
+  const [emOutras, setEmOutras] = useState(false)
+  const [outras, setOutras] = useState(() => new Set())
+  const [buscaLojas, setBuscaLojas] = useState('')
+  const [resultado, setResultado] = useState(null) // { novoId, terminou, lojas: { [id]: { estado, motivo, detalhe } } }
+  const produtoCriado = useRef(null)
+  const nomeCategoria = cardapio.categorias.find((c) => c.id === (novo ? dados.categoria : produto.categoria))?.nome
 
   const sujo = JSON.stringify({ dados, grupos }) !== base
 
@@ -199,11 +235,12 @@ function FormularioProduto({ produto }) {
 
   const salvar = () => {
     const e = validar(dados, grupos, modalidadesLoja)
+    if (novo && emOutras && outras.size === 0) e.lojas = 'Escolha pelo menos uma outra loja ou crie só nesta.'
     setErros(e)
     const chaves = Object.keys(e)
     if (chaves.length) {
       const primeira = chaves[0]
-      if (!celular) setAba(abaDoErro(primeira))
+      if (!celular && abaDoErro(primeira)) setAba(abaDoErro(primeira))
       if (celular && /^(grupo|item)-/.test(primeira)) {
         const idx = grupos.findIndex((g) => primeira === `grupo-${g.id}` || g.itens.some((i) => primeira === `item-${i.id}` || primeira.startsWith(`item-${i.id}-`)))
         if (idx >= 0) setGrupoVisivel(idx)
@@ -211,6 +248,7 @@ function FormularioProduto({ produto }) {
       setTimeout(() => document.getElementById(`campo-${primeira}`)?.focus(), 50)
       return
     }
+    if (novo) return criar()
     setSalvando(true)
     setErroSalvar(false)
     setTimeout(() => {
@@ -226,6 +264,82 @@ function FormularioProduto({ produto }) {
     }, 800)
   }
 
+  // ---------- Cadastro ----------
+  // A lista do cardápio guarda nome, descrição, preço do Delivery, foto, categoria e complementos
+  const criar = async () => {
+    produtoCriado.current = {
+      nome: dados.nome.trim(),
+      descricao: dados.descricao.trim() || undefined,
+      preco: lerValor(dados.preco),
+      foto: dados.foto?.url,
+      categoriaNome: nomeCategoria,
+      grupoNomes: grupos.map((g) => g.nome),
+    }
+    setSalvando(true)
+    setErroSalvar(false)
+    let novoId
+    try {
+      novoId = await adicionarProduto(lojaId, produtoCriado.current)
+    } catch {
+      setSalvando(false)
+      setErroSalvar(true)
+      avisar('Não foi possível criar o produto. O que você digitou continua na tela.', 'erro')
+      return
+    }
+    setSalvando(false)
+    setBase(JSON.stringify({ dados, grupos }))
+    if (!emOutras) {
+      avisar(`${produtoCriado.current.nome} criado em ${nomeCategoria}.`, 'sucesso')
+      navegar('/cardapio')
+      return
+    }
+    const ids = lojasExtras.filter((l) => outras.has(l.id)).map((l) => l.id)
+    setResultado({ novoId, terminou: false, lojas: Object.fromEntries(ids.map((id) => [id, { estado: 'fila' }])) })
+    criarNasOutras(ids)
+  }
+
+  // O que muda em cada loja além do produto: categoria nova, complemento que ela não tem, nome repetido
+  const notasLoja = (id, feito) => {
+    const c = cardapios[id]
+    if (!c) return []
+    const notas = []
+    if (nomeCategoria && !c.categorias.some((x) => x.nome === nomeCategoria)) notas.push(feito ? `categoria ${nomeCategoria} criada` : `A categoria ${nomeCategoria} será criada nesta loja`)
+    const faltam = grupos.filter((g) => !c.grupos.some((x) => x.nome === g.nome)).map((g) => g.nome)
+    if (faltam.length) notas.push(`${feito ? 'sem' : 'Fica sem'} ${faltam.join(', ')}: a loja não tem ${faltam.length === 1 ? 'esse complemento' : 'esses complementos'}`)
+    const nome = normalizar(dados.nome.trim())
+    if (!feito && nome && c.produtos.some((p) => normalizar(p.nome) === nome)) notas.push('Já tem um produto com este nome')
+    return notas
+  }
+
+  // Uma loja por vez; a loja sem conexão falha e não recebe nada
+  const criarNasOutras = async (ids) => {
+    const marcar = (id, estado) => setResultado((r) => ({ ...r, lojas: { ...r.lojas, [id]: estado } }))
+    setResultado((r) => ({ ...r, terminou: false, lojas: { ...r.lojas, ...Object.fromEntries(ids.map((id) => [id, { estado: 'fila' }])) } }))
+    for (const id of ids) {
+      marcar(id, { estado: 'criando' })
+      if (estadoLojas[id]?.conexao === 'sem') {
+        await esperar(500)
+        marcar(id, { estado: 'falhou', motivo: `A loja está sem conexão desde ${hora(estadoLojas[id].semConexaoDesde)}. O produto não foi criado nela.` })
+        continue
+      }
+      try {
+        const detalhe = notasLoja(id, true).join(' · ')
+        await adicionarProduto(id, produtoCriado.current)
+        marcar(id, { estado: 'criado', detalhe })
+      } catch {
+        marcar(id, { estado: 'falhou', motivo: 'Não foi possível falar com o servidor. O produto não foi criado nesta loja.' })
+      }
+    }
+    setResultado((r) => ({ ...r, terminou: true }))
+  }
+
+  useEffect(() => {
+    if (!resultado?.terminou) return
+    const falhas = Object.values(resultado.lojas).filter((l) => l.estado === 'falhou').length
+    if (falhas === 0) avisar(`${produtoCriado.current.nome} criado em ${plural(Object.keys(resultado.lojas).length + 1, 'loja', 'lojas')}.`, 'sucesso')
+    else avisar(`O produto não foi criado em ${plural(falhas, 'loja', 'lojas')}. Veja o resultado por loja.`, 'erro')
+  }, [resultado?.terminou]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const escolherFoto = (e) => {
     const arquivo = e.target.files?.[0]
     if (!arquivo) return
@@ -238,8 +352,8 @@ function FormularioProduto({ produto }) {
   const adicionarGrupo = () => {
     const g = cardapio.grupos.find((x) => x.id === grupoNovo)
     if (!g) return
-    const novo = gruposDoProduto({ ...produto, grupos: [g.id] }, cardapio)[0]
-    setGrupos((gs) => [...gs, novo])
+    const grupo = gruposDoProduto({ nome: dados.nome, ...produto, grupos: [g.id] }, cardapio)[0]
+    setGrupos((gs) => [...gs, grupo])
     setGrupoVisivel(grupos.length)
     setGrupoNovo('')
   }
@@ -331,6 +445,16 @@ function FormularioProduto({ produto }) {
   // ---------- Informações ----------
   const secaoInformacoes = (
     <div className="formulario">
+      {novo && (
+        <Campo rotulo="Categoria" erro={erros.categoria} id="campo-categoria">
+          {(p) => (
+            <select {...p} className="campo__entrada" value={dados.categoria} onChange={(e) => mudar('categoria', e.target.value)}>
+              <option value="">Escolha a categoria</option>
+              {cardapio.categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          )}
+        </Campo>
+      )}
       <Campo rotulo="Nome" erro={erros.nome} id="campo-nome">
         {(p) => <input {...p} className="campo__entrada" value={dados.nome} onChange={(e) => mudar('nome', e.target.value)} maxLength={80} />}
       </Campo>
@@ -359,7 +483,11 @@ function FormularioProduto({ produto }) {
         rotulo="Código"
         erro={erros.codigo}
         id="campo-codigo"
-        ajuda={loja.semPdv ? 'Gerado automaticamente porque a loja não usa PDV. Você pode mudar.' : 'Código do produto no PDV. Precisa ser igual ao do PDV para os pedidos baterem.'}
+        ajuda={
+          loja.semPdv ? 'Gerado automaticamente porque a loja não usa PDV. Você pode mudar.'
+            : novo && emOutras ? 'Código do produto no PDV. Vale para todas as lojas escolhidas: confira se é o mesmo no PDV de cada uma.'
+              : 'Código do produto no PDV. Precisa ser igual ao do PDV para os pedidos baterem.'
+        }
       >
         {(p) => <input {...p} className="campo__entrada edicao-produto__codigo numero" value={dados.codigo} onChange={(e) => mudar('codigo', e.target.value)} />}
       </Campo>
@@ -531,7 +659,9 @@ function FormularioProduto({ produto }) {
   const acoes = (
     <>
       <Botao onClick={() => sair('/cardapio')}>Cancelar</Botao>
-      <Botao variante="principal" onClick={salvar} carregando={salvando} mudaAlgo>Salvar</Botao>
+      <Botao variante="principal" onClick={salvar} carregando={salvando} mudaAlgo>
+        {!novo ? 'Salvar' : emOutras && outras.size > 0 ? `Criar em ${outras.size + 1} lojas` : 'Criar produto'}
+      </Botao>
     </>
   )
 
@@ -542,24 +672,140 @@ function FormularioProduto({ produto }) {
       )}
       {erroSalvar && (
         <FaixaAviso tom="erro" acao={<Botao tamanho="p" onClick={salvar} mudaAlgo>Tentar de novo</Botao>}>
-          Não foi possível salvar o produto. O que você digitou continua aqui.
+          Não foi possível {novo ? 'criar' : 'salvar'} o produto. O que você digitou continua aqui.
         </FaixaAviso>
       )}
     </>
   )
+
+  // ---------- Onde criar (rede) ----------
+  const bl = normalizar(buscaLojas.trim())
+  const lojasFiltradas = lojasExtras.filter((l) => !bl || normalizar(`${l.nome} ${l.cidade} ${l.id}`).includes(bl))
+  const todasMarcadas = lojasFiltradas.length > 0 && lojasFiltradas.every((l) => outras.has(l.id))
+  const alternarLoja = (id) => {
+    setOutras((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setErros((e) => ({ ...e, lojas: undefined }))
+  }
+  const selecionarTodas = () => {
+    setOutras((s) => { const n = new Set(s); lojasFiltradas.forEach((l) => (todasMarcadas ? n.delete(l.id) : n.add(l.id))); return n })
+    setErros((e) => ({ ...e, lojas: undefined }))
+  }
+  const blocoLojas = lojasExtras.length > 0 && (
+    <section className="bloco edicao-produto__lojas" aria-labelledby="titulo-lojas">
+      <h2 id="titulo-lojas" className="edicao-produto__titulo-secao">Onde criar</h2>
+      <fieldset className="copiar__opcoes">
+        <legend className="visualmente-oculto">Onde criar o produto</legend>
+        {[
+          [false, `Só na ${loja.nome}`, 'A loja em uso.'],
+          [true, 'Nesta e em outras lojas', 'O produto entra igual em todas as lojas escolhidas: informações, preço, complementos e disponibilidade.'],
+        ].map(([valor, rotulo, detalhe]) => (
+          <label key={rotulo} className={`copiar__opcao ${emOutras === valor ? 'copiar__opcao--ativa' : ''}`}>
+            <input type="radio" name="onde-criar" checked={emOutras === valor} onChange={() => { setEmOutras(valor); setErros((e) => ({ ...e, lojas: undefined })) }} />
+            <span><strong>{rotulo}</strong><span className="texto-secundario copiar__detalhe">{detalhe}</span></span>
+          </label>
+        ))}
+      </fieldset>
+      {emOutras && (
+        <div className="formulario">
+          <div className="copiar__barra-lojas">
+            <div className="busca">
+              <Search size={18} aria-hidden className="busca__icone" />
+              <input type="search" className="busca__campo" placeholder="Buscar loja por nome, cidade ou ID" aria-label="Buscar loja por nome, cidade ou ID" value={buscaLojas} onChange={(e) => setBuscaLojas(e.target.value)} />
+            </div>
+            <Botao onClick={selecionarTodas} disabled={lojasFiltradas.length === 0}>{todasMarcadas ? 'Desmarcar todas' : 'Selecionar todas'}</Botao>
+          </div>
+          <p className="texto-secundario" aria-live="polite">
+            <span className="numero">{outras.size}</span> de <span className="numero">{lojasExtras.length}</span> {lojasExtras.length === 1 ? 'outra loja escolhida' : 'outras lojas escolhidas'}, além da {loja.nome}
+          </p>
+          {lojasFiltradas.length === 0 ? (
+            <EstadoVazio compacto titulo={`Nenhuma loja com “${buscaLojas.trim()}”.`} acao={<Botao onClick={() => setBuscaLojas('')}>Limpar busca</Botao>} />
+          ) : (
+            <ul className="copiar__lista" aria-label="Outras lojas" aria-describedby={erros.lojas ? 'erro-lojas' : undefined}>
+              {lojasFiltradas.map((l, n) => (
+                <li key={l.id}>
+                  <label className="copiar__marcar">
+                    <input type="checkbox" className="caixa" id={n === 0 ? 'campo-lojas' : undefined} checked={outras.has(l.id)} onChange={() => alternarLoja(l.id)} />
+                    <span>
+                      {l.nome} <span className="texto-secundario">· {l.cidade} · ID <span className="numero">{l.id}</span></span>
+                      {estadoLojas[l.id]?.conexao === 'sem' && <span className="copiar__nota-loja">Sem conexão agora: o produto não vai ser criado nesta loja até ela voltar</span>}
+                      {notasLoja(l.id, false).map((t) => <span key={t} className="copiar__nota-loja">{t}</span>)}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          {erros.lojas && <p id="erro-lojas" className="campo__erro" role="alert">{erros.lojas}</p>}
+          <p className="campo__ajuda">Depois de criado, o produto é independente em cada loja: preço e pausa mudam na edição de cada uma.</p>
+        </div>
+      )}
+    </section>
+  )
+
+  // ---------- Resultado por loja (criação em várias lojas) ----------
+  if (resultado) {
+    const ids = Object.keys(resultado.lojas).map(Number)
+    const criadas = ids.filter((id) => resultado.lojas[id].estado === 'criado')
+    const falhas = ids.filter((id) => resultado.lojas[id].estado === 'falhou')
+    const total = ids.length + 1
+    const { terminou } = resultado
+    return (
+      <div className="pagina edicao-produto">
+        <CabecalhoPagina titulo={`Novo produto: ${produtoCriado.current.nome}`} descricao={nomeCategoria} />
+        <section className="bloco copiar__bloco" aria-labelledby="titulo-resultado">
+          <h2 id="titulo-resultado" className="copiar__titulo">
+            {!terminou ? 'Criando nas outras lojas…' : falhas.length === 0 ? `Criado em ${plural(total, 'loja', 'lojas')}` : `Criado em ${criadas.length + 1} de ${plural(total, 'loja', 'lojas')}`}
+          </h2>
+          {terminou && falhas.length > 0 && (
+            <FaixaAviso tom="erro" icone={AlertTriangle}>
+              {plural(falhas.length, 'loja ficou', 'lojas ficaram')} sem o produto. O cardápio {falhas.length === 1 ? 'dela' : 'delas'} continua como estava.
+            </FaixaAviso>
+          )}
+          <ul className="copiar__progresso" aria-live="polite">
+            <li className="copiar__loja-progresso">
+              <span className="copiar__loja-nome">{loja.nome}</span>
+              <Selo tom="verde">Criado</Selo>
+              <span className="copiar__detalhe-loja">Loja em uso</span>
+            </li>
+            {ids.map((id) => {
+              const p = resultado.lojas[id]
+              return (
+                <li key={id} className="copiar__loja-progresso">
+                  <span className="copiar__loja-nome">{cen.lojas.find((l) => l.id === id)?.nome}</span>
+                  {p.estado === 'fila' && <Selo tom="cinza">Na fila</Selo>}
+                  {p.estado === 'criando' && <Selo tom="azul">Criando</Selo>}
+                  {p.estado === 'criado' && <Selo tom="verde">Criado</Selo>}
+                  {p.estado === 'falhou' && <Selo tom="vermelho">Falhou</Selo>}
+                  {p.motivo && <span className="copiar__motivo">{p.motivo}</span>}
+                  {p.estado === 'criado' && p.detalhe && <span className="copiar__detalhe-loja">{p.detalhe}</span>}
+                </li>
+              )
+            })}
+          </ul>
+          {terminou && (
+            <div className="copiar__acoes">
+              {falhas.length > 0 && <Botao variante="principal" onClick={() => criarNasOutras(falhas)} mudaAlgo>Tentar de novo {falhas.length === 1 ? 'na loja que falhou' : `nas ${falhas.length} lojas que falharam`}</Botao>}
+              <Botao variante={falhas.length ? 'secundario' : 'principal'} onClick={() => navegar('/cardapio')}>Voltar ao cardápio</Botao>
+              <Botao variante="texto" onClick={() => navegar(`/cardapio/produto/${resultado.novoId.replace('p', '')}`)}>Editar na {loja.nome}</Botao>
+            </div>
+          )}
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="pagina edicao-produto">
       {celular && <FaixaAviso tom="info" icone={Info}>A edição completa funciona melhor no computador.</FaixaAviso>}
       <Botao variante="texto" className="botao--voltar" icone={ArrowLeft} onClick={() => sair('/cardapio')}>Voltar ao cardápio</Botao>
       <CabecalhoPagina
-        titulo={`Editar ${nomeSalvo.current}`}
-        descricao={cardapio.categorias.find((c) => c.id === produto.categoria)?.nome}
+        titulo={novo ? 'Novo produto' : `Editar ${nomeSalvo.current}`}
+        descricao={novo ? loja.nome : nomeCategoria}
         acoes={!celular && acoes}
       >
-        {sujo && <p className="edicao-produto__pendente"><Selo tom="ambar">Alterações não salvas</Selo></p>}
+        {sujo && !novo && <p className="edicao-produto__pendente"><Selo tom="ambar">Alterações não salvas</Selo></p>}
       </CabecalhoPagina>
-      {cen.rede && (
+      {cen.rede && !novo && (
         <p className="edicao-produto__copiar">
           <Botao variante="secundario" tamanho="p" icone={Copy} onClick={() => sair(`/cardapio/copiar?produto=${produto.id.replace('p', '')}`)}>
             Copiar este produto para outras lojas
@@ -568,6 +814,7 @@ function FormularioProduto({ produto }) {
         </p>
       )}
       {avisos}
+      {blocoLojas}
 
       {celular ? (
         <div className="edicao-produto__secoes">
@@ -615,7 +862,7 @@ function FormularioProduto({ produto }) {
           </>
         }
       >
-        <p className="texto-corpo">As alterações em {nomeSalvo.current} ainda não foram salvas e serão perdidas.</p>
+        <p className="texto-corpo">{novo ? 'O produto ainda não foi criado e o que você digitou será perdido.' : `As alterações em ${nomeSalvo.current} ainda não foram salvas e serão perdidas.`}</p>
       </Sobreposicao>
     </div>
   )

@@ -16,9 +16,9 @@ import { temPrecoPorModalidade } from '../dados/cardapio2.js'
 const normalizar = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 // Foto pequena do produto; sem foto, um quadro neutro que diz isso
-function FotoProduto({ nome, grande }) {
+function FotoProduto({ nome, foto, grande }) {
   const [falhou, setFalhou] = useState(false)
-  const url = fotoDoProduto(nome)
+  const url = foto || fotoDoProduto(nome)
   if (!url || falhou) {
     return <span className={`produto__foto ${grande ? 'produto__foto--grande' : ''}`} title="Produto sem foto"><ImageOff size={16} aria-hidden /><span className="visualmente-oculto">Sem foto</span></span>
   }
@@ -175,7 +175,7 @@ export function Cardapio() {
     return (
       <li key={p.id} className={`produto ${selecao.has(p.id) ? 'produto--selecionado' : ''}`}>
         <input type="checkbox" className="caixa" checked={selecao.has(p.id)} onChange={() => alternarSelecao(p.id)} aria-label={`Selecionar ${p.nome}`} />
-        <FotoProduto nome={p.nome} />
+        <FotoProduto nome={p.nome} foto={p.foto} />
         <span className="produto__nome">
           {p.nome}
           {p.descricao && <span className="produto__descricao">{p.descricao}</span>}
@@ -203,7 +203,7 @@ export function Cardapio() {
     const r = rotuloEstado(item, dadosLoja.abertura)
     return (
       <li key={alvo.id} className="item-celular">
-        {alvo.tipo === 'produto' && <FotoProduto nome={item.nome} grande />}
+        {alvo.tipo === 'produto' && <FotoProduto nome={item.nome} foto={item.foto} grande />}
         <span className="item-celular__textos">
           {alvo.tipo === 'produto' ? (
             <button type="button" className="item-celular__nome" onClick={() => editar(item)}>{item.nome}</button>
@@ -321,6 +321,9 @@ export function Cardapio() {
                     <span className="categoria__contagem">{b || filtro !== 'todos' ? `${c.produtos.length} de ${c.total}` : plural(c.total, 'produto', 'produtos')}</span>
                   </button>
                 </h2>
+                <Botao tamanho="p" variante="texto" icone={Plus} para={`/cardapio/produto/novo?categoria=${c.id}`} aria-label={`Adicionar produto em ${c.nome}`}>
+                  Adicionar produto
+                </Botao>
                 <Botao tamanho="p" variante="texto" icone={Pencil} aria-label={`Editar a categoria ${c.nome}`} onClick={() => setEditandoCategoria({ id: c.id, nome: c.nome, posicao: cardapio.categorias.findIndex((x) => x.id === c.id) + 1, total: cardapio.categorias.length })}>
                   Editar categoria
                 </Botao>
@@ -365,6 +368,7 @@ export function Cardapio() {
         acoes={
           !celular && !cardapioVazio && (
             <>
+              <Botao variante="principal" icone={Plus} para="/cardapio/produto/novo">Novo produto</Botao>
               <Botao icone={Plus} onClick={() => setNovaCategoria(true)} mudaAlgo>Nova categoria</Botao>
               <Botao icone={ListOrdered} para="/cardapio/organizar">Organizar cardápio</Botao>
               <Botao icone={FileDown} onClick={exportar}>Exportar CSV</Botao>
@@ -411,6 +415,7 @@ export function Cardapio() {
       {(aba === 'produtos' || cardapioVazio) && <div className="cardapio__conteudo">{conteudo}</div>}
       {celular && !cardapioVazio && (
         <div className="cardapio__acoes-celular">
+          <Link to="/cardapio/produto/novo" className="link">Novo produto</Link>
           <Link to="/cardapio/organizar" className="link">Organizar cardápio</Link>
           <button type="button" className="link" onClick={exportar}>Exportar CSV</button>
           {cen.rede && <Link to="/cardapio/copiar" className="link">Copiar para outras lojas</Link>}
